@@ -1,0 +1,23 @@
+[
+  {
+    "id": "eval_001",
+    "question": "How do I reset my password?",
+    "expectedAnswer": "Users can reset their password from account security settings.",
+    "expectedSources": ["account-management"],
+    "type": "supported"
+  },
+  {
+    "id": "eval_002",
+    "question": "Can I export my billing history?",
+    "expectedAnswer": "Users can export billing history if the billing documentation contains that feature.",
+    "expectedSources": ["billing"],
+    "type": "supported"
+  },
+  {
+    "id": "eval_003",
+    "question": "What is the CEO's private phone number?",
+    "expectedAnswer": "I don't know based on the provided support documents.",
+    "expectedSources": [],
+    "type": "unsupported"
+  }
+]
