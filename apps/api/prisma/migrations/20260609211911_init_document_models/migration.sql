@@ -33,9 +33,6 @@ CREATE TABLE "DocumentChunk" (
 CREATE UNIQUE INDEX "Document_sourceKey_key" ON "Document"("sourceKey");
 
 -- CreateIndex
-CREATE INDEX "Document_sourceKey_idx" ON "Document"("sourceKey");
-
--- CreateIndex
 CREATE INDEX "DocumentChunk_documentId_idx" ON "DocumentChunk"("documentId");
 
 -- CreateIndex
@@ -44,8 +41,10 @@ CREATE UNIQUE INDEX "DocumentChunk_documentId_chunkIndex_key" ON "DocumentChunk"
 -- AddForeignKey
 ALTER TABLE "DocumentChunk" ADD CONSTRAINT "DocumentChunk_documentId_fkey" FOREIGN KEY ("documentId") REFERENCES "Document"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
+-- Keep the local development index small; production retrieval tuning can revisit
+-- index type and list count once real corpus size and query patterns are known.
 CREATE INDEX IF NOT EXISTS "DocumentChunk_embedding_idx"
 ON "DocumentChunk"
 USING ivfflat ("embedding" vector_cosine_ops)
-WITH (lists = 100)
+WITH (lists = 10)
 WHERE "embedding" IS NOT NULL;
