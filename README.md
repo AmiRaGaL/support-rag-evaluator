@@ -115,7 +115,7 @@ curl http://localhost:3001/health
 ```
 ## CI
 
-Pull requests run the API CI workflow.
+Pull requests to `main` and pushes to `main` run the API CI workflow.
 
 The workflow checks:
 
