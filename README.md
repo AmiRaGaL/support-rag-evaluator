@@ -113,3 +113,17 @@ Health check endpoint:
 ```bash
 curl http://localhost:3001/health
 ```
+## CI
+
+Pull requests run the API CI workflow.
+
+The workflow checks:
+
+- Dependency installation with `npm ci`
+- Prisma Client generation
+- Database migrations against PostgreSQL + pgvector
+- Linting
+- Unit tests
+- API build
+
+Local database uses port `5433`, while CI uses port `5432` inside the GitHub Actions runner.
