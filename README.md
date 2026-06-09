@@ -18,6 +18,14 @@ This project demonstrates production-minded AI feature development:
 
 Early scaffold. Building in small, reviewable commits.
 
+## Local development
+
+### Start local services
+
+```bash
+docker compose up -d
+```
+
 ## Planned stack
 
 - Backend: NestJS, TypeScript
