@@ -69,3 +69,23 @@ The assistant will be evaluated on:
 - Refusal accuracy
 - Average latency
 - Estimated cost
+
+## API app
+
+The backend API lives in:
+
+```text
+apps/api
+```
+Run locally:
+
+```bash
+cd apps/api
+npm install
+npm run start:dev
+```
+Health check endpoint:
+
+```bash
+curl http://localhost:3001/health
+```
