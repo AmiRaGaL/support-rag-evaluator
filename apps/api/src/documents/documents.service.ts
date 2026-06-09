@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { Prisma, type Document, type DocumentChunk } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 export interface UpsertDocumentInput {
@@ -16,11 +16,17 @@ export interface UpsertDocumentInput {
   }>;
 }
 
+export type DocumentWithChunks = Document & {
+  chunks: DocumentChunk[];
+};
+
 @Injectable()
 export class DocumentsService {
   constructor(private readonly prisma: PrismaService) {}
 
-  async upsertDocumentWithChunks(input: UpsertDocumentInput) {
+  async upsertDocumentWithChunks(
+    input: UpsertDocumentInput,
+  ): Promise<DocumentWithChunks> {
     return this.prisma.$transaction(async (tx) => {
       const document = await tx.document.upsert({
         where: {
@@ -31,9 +37,6 @@ export class DocumentsService {
           sourceType: input.sourceType,
           sourcePath: input.sourcePath,
           contentHash: input.contentHash,
-          chunks: {
-            deleteMany: {},
-          },
         },
         create: {
           title: input.title,
@@ -41,6 +44,12 @@ export class DocumentsService {
           sourceType: input.sourceType,
           sourcePath: input.sourcePath,
           contentHash: input.contentHash,
+        },
+      });
+
+      await tx.documentChunk.deleteMany({
+        where: {
+          documentId: document.id,
         },
       });
 

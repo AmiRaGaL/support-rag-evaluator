@@ -59,7 +59,12 @@ export function chunkText(
           ? lastSentenceBreak + 1
           : -1;
 
-      end = Math.max(paragraphCandidate, sentenceCandidate, rawEnd);
+      end =
+        paragraphCandidate > -1
+          ? paragraphCandidate
+          : sentenceCandidate > -1
+            ? sentenceCandidate
+            : rawEnd;
     }
 
     const content = normalized.slice(start, end).trim();

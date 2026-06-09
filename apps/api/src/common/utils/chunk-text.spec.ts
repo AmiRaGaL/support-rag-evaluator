@@ -31,6 +31,34 @@ describe('chunkText', () => {
     expect(chunks[1].chunkIndex).toBe(1);
   });
 
+  it('prefers paragraph boundaries when a clean split is available', () => {
+    const input = [
+      'First paragraph has enough text.',
+      'Second paragraph should start a new chunk.',
+    ].join('\n\n');
+
+    const chunks = chunkText(input, {
+      maxChars: 60,
+      overlapChars: 0,
+    });
+
+    expect(chunks).toHaveLength(2);
+    expect(chunks[0].content).toBe('First paragraph has enough text.');
+    expect(chunks[1].content).toBe(
+      'Second paragraph should start a new chunk.',
+    );
+  });
+
+  it('keeps chunks within maxChars for long text without natural breaks', () => {
+    const chunks = chunkText('a'.repeat(55), {
+      maxChars: 20,
+      overlapChars: 5,
+    });
+
+    expect(chunks.length).toBeGreaterThan(1);
+    expect(chunks.every((chunk) => chunk.content.length <= 20)).toBe(true);
+  });
+
   it('rejects invalid overlap values', () => {
     expect(() =>
       chunkText('hello', {

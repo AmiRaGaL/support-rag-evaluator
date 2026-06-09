@@ -8,21 +8,28 @@ import { DocumentsService } from '../documents/documents.service';
 export interface IngestMarkdownDirectoryResult {
   documentsProcessed: number;
   chunksCreated: number;
-  documents: Array<{
-    id: string;
-    title: string;
-    sourceKey: string;
-    chunkCount: number;
-  }>;
+  documents: IngestedDocumentSummary[];
 }
+
+export interface IngestedDocumentSummary {
+  id: string;
+  title: string;
+  sourceKey: string;
+  chunkCount: number;
+}
+
+export const SAMPLE_DOCS_DIR = path.resolve(
+  __dirname,
+  '../../../..',
+  'datasets/sample-docs',
+);
 
 @Injectable()
 export class IngestionService {
   constructor(private readonly documentsService: DocumentsService) {}
 
   async ingestSampleDocs(): Promise<IngestMarkdownDirectoryResult> {
-    const docsDir = path.resolve(process.cwd(), '../../datasets/sample-docs');
-    return this.ingestMarkdownDirectory(docsDir);
+    return this.ingestMarkdownDirectory(SAMPLE_DOCS_DIR);
   }
 
   async ingestMarkdownDirectory(
@@ -89,5 +96,5 @@ function extractMarkdownTitle(content: string): string | null {
     return null;
   }
 
-  return firstHeading.replace(/^#\s+/, '').trim();
+  return firstHeading.trim().replace(/^#\s+/, '').trim();
 }
