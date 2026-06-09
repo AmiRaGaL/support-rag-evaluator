@@ -26,6 +26,29 @@ Early scaffold. Building in small, reviewable commits.
 docker compose up -d
 ```
 
+Docker Compose starts PostgreSQL with pgvector using the `pgvector/pgvector:pg16`
+image. The database is exposed on `localhost:5433`.
+
+For local API development, create `apps/api/.env` with:
+
+```bash
+DATABASE_URL="postgresql://support_rag_user:support_rag_password@localhost:5433/support_rag_dev?schema=public"
+```
+
+Do not commit local `.env` files.
+
+### Apply database migrations
+
+```bash
+cd apps/api
+npx prisma migrate dev
+```
+
+The Phase 2 migration enables pgvector with
+`CREATE EXTENSION IF NOT EXISTS vector`, creates `Document` and
+`DocumentChunk`, and stores optional embeddings as a nullable `vector(1536)`
+column.
+
 ## Planned stack
 
 - Backend: NestJS, TypeScript
@@ -82,6 +105,7 @@ Run locally:
 ```bash
 cd apps/api
 npm install
+npx prisma migrate dev
 npm run start:dev
 ```
 Health check endpoint:
