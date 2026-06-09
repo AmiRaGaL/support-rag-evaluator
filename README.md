@@ -113,6 +113,40 @@ Health check endpoint:
 ```bash
 curl http://localhost:3001/health
 ```
+
+### Local retrieval workflow
+
+The current retrieval implementation uses a deterministic fake embedding
+provider. It does not call OpenAI and does not require API keys. These routes
+are simple developer/testing utilities while retrieval is being built out.
+
+After starting PostgreSQL, applying migrations, and running the API, ingest the
+sample support docs:
+
+```bash
+curl -X POST http://localhost:3001/ingestion/sample-docs
+```
+
+Generate embeddings for any chunks that do not have one yet:
+
+```bash
+curl -X POST http://localhost:3001/retrieval/embed-missing
+```
+
+Search embedded chunks:
+
+```bash
+curl "http://localhost:3001/retrieval/search?q=billing%20email&limit=5"
+```
+
+The same search is also available as JSON:
+
+```bash
+curl -X POST http://localhost:3001/retrieval/search \
+  -H "Content-Type: application/json" \
+  -d '{"query":"billing email","limit":5}'
+```
+
 ## CI
 
 Pull requests to `main` and pushes to `main` run the API CI workflow.
