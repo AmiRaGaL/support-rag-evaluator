@@ -5,12 +5,14 @@ import { AppService } from './app.service';
 import { HealthController } from './health.controller';
 import { IngestionModule } from './ingestion/ingestion.module';
 import { PrismaModule } from './prisma/prisma.module';
+import { RetrievalModule } from './retrieval/retrieval.module';
 
 @Module({
   imports: [
     ConfigModule.forRoot({ isGlobal: true }),
     PrismaModule,
     IngestionModule,
+    RetrievalModule,
   ],
   controllers: [AppController, HealthController],
   providers: [AppService],
