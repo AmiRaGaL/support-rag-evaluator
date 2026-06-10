@@ -23,7 +23,7 @@ Early scaffold. Building in small, reviewable commits.
 ### Start local services
 
 ```bash
-docker compose up -d
+docker compose up -d postgres
 ```
 
 Docker Compose starts PostgreSQL with pgvector using the `pgvector/pgvector:pg16`
