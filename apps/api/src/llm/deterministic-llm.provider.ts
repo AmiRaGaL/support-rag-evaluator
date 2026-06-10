@@ -8,6 +8,8 @@ import type {
 
 @Injectable()
 export class DeterministicLlmProvider implements LlmProvider {
+  readonly providerName = 'deterministic';
+
   constructor(private readonly groundedAnswerService: GroundedAnswerService) {}
 
   generateGroundedAnswer(

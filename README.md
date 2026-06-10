@@ -212,6 +212,63 @@ curl -X POST http://localhost:3001/chat \
 }
 ```
 
+### Query logging / observability
+
+Every `/chat` request is logged for local inspection and eval debugging. Query
+logs capture the question, answer, refusal flag, confidence, provider name,
+latency in milliseconds, retrieved chunks, and whether each retrieved chunk was
+used as a citation.
+
+Logging is best-effort: a logging failure is recorded internally and should not
+break the chat response. Secrets and API keys are not stored in query logs.
+
+Create a chat response:
+
+```bash
+curl -X POST http://localhost:3001/chat \
+  -H "Content-Type: application/json" \
+  -d '{"question":"Can I export billing history?","limit":5}'
+```
+
+Inspect recent query logs:
+
+```bash
+curl "http://localhost:3001/query-logs?limit=10"
+```
+
+Inspect one query log with retrieved chunk metadata:
+
+```bash
+curl http://localhost:3001/query-logs/query_log_id
+```
+
+Query log responses include:
+
+```json
+{
+  "id": "query_log_id",
+  "question": "Can I export billing history?",
+  "answer": "According to the retrieved support documentation: ...",
+  "refusal": false,
+  "confidence": 0.7,
+  "provider": "deterministic",
+  "retrievedChunkCount": 3,
+  "latencyMs": 24,
+  "createdAt": "2026-06-10T00:00:00.000Z",
+  "retrievedChunks": [
+    {
+      "chunkId": "chunk_id",
+      "documentId": "document_id",
+      "documentTitle": "Billing",
+      "sourceKey": "billing",
+      "chunkIndex": 0,
+      "similarity": 0.82,
+      "citationUsed": true
+    }
+  ]
+}
+```
+
 ### Optional Groq LLM provider
 
 By default, chat uses the deterministic offline provider so tests and CI do not

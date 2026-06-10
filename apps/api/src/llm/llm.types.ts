@@ -19,6 +19,8 @@ export interface GroundedAnswer {
 }
 
 export interface LlmProvider {
+  readonly providerName: string;
+
   generateGroundedAnswer(
     input: GenerateGroundedAnswerInput,
   ): Promise<GroundedAnswer>;

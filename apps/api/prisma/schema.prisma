@@ -19,18 +19,53 @@ model Document {
 }
 
 model DocumentChunk {
-  id         String   @id @default(cuid())
+  id         String                       @id @default(cuid())
   documentId String
   chunkIndex Int
   content    String
   tokenCount Int?
   metadata   Json?
   embedding  Unsupported("vector(1536)")?
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  createdAt  DateTime                     @default(now())
+  updatedAt  DateTime                     @updatedAt
 
-  document   Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  document Document @relation(fields: [documentId], references: [id], onDelete: Cascade)
 
   @@unique([documentId, chunkIndex])
   @@index([documentId])
+}
+
+model RagQuery {
+  id                  String              @id @default(cuid())
+  question            String
+  answer              String
+  refusal             Boolean             @default(false)
+  confidence          Float?
+  provider            String
+  retrievedChunkCount Int
+  latencyMs           Int
+  createdAt           DateTime            @default(now())
+  retrievedChunks     RagRetrievedChunk[]
+
+  @@index([createdAt])
+  @@index([refusal])
+}
+
+model RagRetrievedChunk {
+  id            String   @id @default(cuid())
+  ragQueryId    String
+  chunkId       String
+  documentId    String
+  documentTitle String
+  sourceKey     String
+  chunkIndex    Int
+  similarity    Float
+  citationUsed  Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  ragQuery RagQuery @relation(fields: [ragQueryId], references: [id], onDelete: Cascade)
+
+  @@index([ragQueryId])
+  @@index([sourceKey])
+  @@index([citationUsed])
 }
