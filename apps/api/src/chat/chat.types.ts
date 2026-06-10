@@ -5,7 +5,9 @@ export type RetrievedChunk = SearchChunksResult['chunks'][number];
 export type ChatRefusalReason =
   | 'empty_question'
   | 'no_retrieved_chunks'
-  | 'insufficient_overlap';
+  | 'insufficient_overlap'
+  | 'invalid_llm_output'
+  | 'unsupported_by_retrieved_chunks';
 
 export interface ChatCitation {
   chunkId: string;

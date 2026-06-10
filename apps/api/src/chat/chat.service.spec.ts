@@ -1,22 +1,22 @@
 import { RetrievalService } from '../retrieval/retrieval.service';
+import { LlmService } from '../llm/llm.service';
 import { ChatService } from './chat.service';
-import { GroundedAnswerService } from './grounded-answer.service';
 
 describe('ChatService', () => {
   const retrievalService = {
     searchChunks: jest.fn(),
   };
-  const groundedAnswerService = {
-    buildAnswer: jest.fn(),
+  const llmService = {
+    generateGroundedAnswer: jest.fn(),
   };
 
   beforeEach(() => {
     retrievalService.searchChunks.mockReset();
-    groundedAnswerService.buildAnswer.mockReset();
+    llmService.generateGroundedAnswer.mockReset();
   });
 
   it('refuses empty questions without calling retrieval', async () => {
-    groundedAnswerService.buildAnswer.mockReturnValue({
+    llmService.generateGroundedAnswer.mockResolvedValue({
       status: 'refused',
       question: '',
       answer:
@@ -27,7 +27,7 @@ describe('ChatService', () => {
     });
     const service = new ChatService(
       retrievalService as unknown as RetrievalService,
-      groundedAnswerService as unknown as GroundedAnswerService,
+      llmService as unknown as LlmService,
     );
 
     const result = await service.answerQuestion({ question: '   ', limit: 5 });
@@ -42,7 +42,10 @@ describe('ChatService', () => {
       retrievedChunkCount: 0,
     });
     expect(retrievalService.searchChunks).not.toHaveBeenCalled();
-    expect(groundedAnswerService.buildAnswer).toHaveBeenCalledWith('', []);
+    expect(llmService.generateGroundedAnswer).toHaveBeenCalledWith({
+      question: '',
+      chunks: [],
+    });
   });
 
   it('passes normalized questions and retrieved chunks to the answer builder', async () => {
@@ -66,7 +69,7 @@ describe('ChatService', () => {
       limit: 4,
       chunks,
     });
-    groundedAnswerService.buildAnswer.mockReturnValue({
+    llmService.generateGroundedAnswer.mockResolvedValue({
       status: 'answered',
       question: 'billing email',
       answer:
@@ -76,7 +79,7 @@ describe('ChatService', () => {
     });
     const service = new ChatService(
       retrievalService as unknown as RetrievalService,
-      groundedAnswerService as unknown as GroundedAnswerService,
+      llmService as unknown as LlmService,
     );
 
     await service.answerQuestion({ question: ' billing email ', limit: 4 });
@@ -85,9 +88,9 @@ describe('ChatService', () => {
       query: 'billing email',
       limit: 4,
     });
-    expect(groundedAnswerService.buildAnswer).toHaveBeenCalledWith(
-      'billing email',
+    expect(llmService.generateGroundedAnswer).toHaveBeenCalledWith({
+      question: 'billing email',
       chunks,
-    );
+    });
   });
 });

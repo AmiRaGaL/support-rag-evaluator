@@ -61,7 +61,7 @@ export class GroundedAnswerService {
       return this.refuse(
         normalizedQuestion,
         'empty_question',
-        chunks.length,
+        chunks,
         'Ask a support question so I can look for an answer in the documentation.',
       );
     }
@@ -70,7 +70,7 @@ export class GroundedAnswerService {
       return this.refuse(
         normalizedQuestion,
         'no_retrieved_chunks',
-        0,
+        [],
         'I could not find support documentation that answers this question.',
       );
     }
@@ -103,7 +103,7 @@ export class GroundedAnswerService {
       return this.refuse(
         normalizedQuestion,
         'insufficient_overlap',
-        chunks.length,
+        chunks,
         'I found related documentation, but it does not contain enough matching support details to answer this question.',
       );
     }
@@ -252,7 +252,7 @@ export class GroundedAnswerService {
   private refuse(
     question: string,
     refusalReason: ChatRefusalReason,
-    retrievedChunkCount: number,
+    retrievedChunks: RetrievedChunk[],
     answer: string,
   ): ChatResponse {
     return {
@@ -261,7 +261,7 @@ export class GroundedAnswerService {
       answer,
       citations: [],
       refusalReason,
-      retrievedChunkCount,
+      retrievedChunkCount: retrievedChunks.length,
     };
   }
 }

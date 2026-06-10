@@ -189,24 +189,7 @@ answer:
       "snippet": "## Billing history Users can export billing history from Settings > Billing > Export History."
     }
   ],
-  "refusal": false,
-  "confidence": 0.7,
-  "retrievedChunks": [
-    {
-      "id": "chunk_id",
-      "documentId": "document_id",
-      "documentTitle": "Billing",
-      "sourceKey": "billing",
-      "sourcePath": "/absolute/path/to/datasets/sample-docs/billing.md",
-      "chunkIndex": 0,
-      "content": "## Billing history\n\nUsers can export billing history from Settings > Billing > Export History.",
-      "tokenCount": 14,
-      "metadata": null,
-      "distance": 0.12,
-      "score": 0.88
-    }
-  ],
-  "retrievedChunkCount": 1
+  "retrievedChunkCount": 3
 }
 ```
 
@@ -224,25 +207,8 @@ curl -X POST http://localhost:3001/chat \
   "question": "Can I export audit logs?",
   "answer": "I found related documentation, but it does not contain enough matching support details to answer this question.",
   "citations": [],
-  "refusal": true,
-  "confidence": 0,
-  "retrievedChunks": [
-    {
-      "id": "chunk_id",
-      "documentId": "document_id",
-      "documentTitle": "Billing",
-      "sourceKey": "billing",
-      "sourcePath": "/absolute/path/to/datasets/sample-docs/billing.md",
-      "chunkIndex": 0,
-      "content": "Customers can update billing settings from the billing page.",
-      "tokenCount": 9,
-      "metadata": null,
-      "distance": 0.22,
-      "score": 0.78
-    }
-  ],
   "refusalReason": "insufficient_overlap",
-  "retrievedChunkCount": 1
+  "retrievedChunkCount": 3
 }
 ```
 
