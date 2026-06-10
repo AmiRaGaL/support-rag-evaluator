@@ -1,9 +1,14 @@
+import { NotFoundException } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { promises as fs } from 'fs';
 import { tmpdir } from 'os';
 import * as path from 'path';
 import { DocumentsService } from '../documents/documents.service';
-import { IngestionService, SAMPLE_DOCS_DIR } from './ingestion.service';
+import {
+  IngestionService,
+  resolveSampleDocsDirectory,
+  SAMPLE_DOCS_DIR,
+} from './ingestion.service';
 
 describe('IngestionService', () => {
   const temporaryDirectories: string[] = [];
@@ -31,6 +36,28 @@ describe('IngestionService', () => {
   it('uses a repo-relative sample docs path', () => {
     expect(SAMPLE_DOCS_DIR).toBe(
       path.resolve(__dirname, '../../../..', 'datasets/sample-docs'),
+    );
+  });
+
+  it('resolves sample docs from the built dist layout', () => {
+    const repoRoot = path.resolve(__dirname, '../../../..');
+    const builtIngestionDirectory = path.join(
+      repoRoot,
+      'apps/api/dist/src/ingestion',
+    );
+
+    expect(resolveSampleDocsDirectory(builtIngestionDirectory)).toBe(
+      path.join(repoRoot, 'datasets/sample-docs'),
+    );
+  });
+
+  it('points at the actual sample docs directory', async () => {
+    await expect(fs.readdir(SAMPLE_DOCS_DIR)).resolves.toEqual(
+      expect.arrayContaining([
+        'account-management.md',
+        'billing.md',
+        'troubleshooting.md',
+      ]),
     );
   });
 
@@ -109,5 +136,23 @@ describe('IngestionService', () => {
         },
       ],
     });
+  });
+
+  it('throws a clear error when the markdown directory cannot be read', async () => {
+    const service = new IngestionService(documentsService as DocumentsService);
+    const missingDirectory = path.join(
+      tmpdir(),
+      'support-rag-missing-sample-docs',
+    );
+
+    await expect(
+      service.ingestMarkdownDirectory(missingDirectory),
+    ).rejects.toThrow(NotFoundException);
+    await expect(
+      service.ingestMarkdownDirectory(missingDirectory),
+    ).rejects.toThrow(
+      `Markdown directory not found or cannot be read: ${missingDirectory} (ENOENT)`,
+    );
+    expect(documentsService.upsertDocumentWithChunks).not.toHaveBeenCalled();
   });
 });

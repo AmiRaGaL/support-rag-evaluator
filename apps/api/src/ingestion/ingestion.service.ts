@@ -1,5 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { createHash } from 'crypto';
+import { existsSync, type Dirent } from 'fs';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import { chunkText } from '../common/utils/chunk-text';
@@ -18,11 +19,7 @@ export interface IngestedDocumentSummary {
   chunkCount: number;
 }
 
-export const SAMPLE_DOCS_DIR = path.resolve(
-  __dirname,
-  '../../../..',
-  'datasets/sample-docs',
-);
+export const SAMPLE_DOCS_DIR = resolveSampleDocsDirectory();
 
 @Injectable()
 export class IngestionService {
@@ -35,7 +32,7 @@ export class IngestionService {
   async ingestMarkdownDirectory(
     directoryPath: string,
   ): Promise<IngestMarkdownDirectoryResult> {
-    const entries = await fs.readdir(directoryPath, { withFileTypes: true });
+    const entries = await this.readMarkdownDirectoryEntries(directoryPath);
     const markdownFiles = entries
       .filter((entry) => entry.isFile() && entry.name.endsWith('.md'))
       .map((entry) => entry.name)
@@ -85,6 +82,20 @@ export class IngestionService {
       documents,
     };
   }
+
+  private async readMarkdownDirectoryEntries(
+    directoryPath: string,
+  ): Promise<Dirent[]> {
+    try {
+      return await fs.readdir(directoryPath, { withFileTypes: true });
+    } catch (error: unknown) {
+      const errorCode = isFileSystemError(error) ? ` (${error.code})` : '';
+
+      throw new NotFoundException(
+        `Markdown directory not found or cannot be read: ${directoryPath}${errorCode}`,
+      );
+    }
+  }
 }
 
 function extractMarkdownTitle(content: string): string | null {
@@ -97,4 +108,27 @@ function extractMarkdownTitle(content: string): string | null {
   }
 
   return firstHeading.trim().replace(/^#\s+/, '').trim();
+}
+
+export function resolveSampleDocsDirectory(
+  baseDir = __dirname,
+  currentWorkingDirectory = process.cwd(),
+): string {
+  const candidates = [
+    path.resolve(baseDir, '../../../..', 'datasets/sample-docs'),
+    path.resolve(baseDir, '../../../../..', 'datasets/sample-docs'),
+    path.resolve(currentWorkingDirectory, 'datasets/sample-docs'),
+    path.resolve(currentWorkingDirectory, '../..', 'datasets/sample-docs'),
+  ];
+
+  return candidates.find((candidate) => existsSync(candidate)) ?? candidates[0];
+}
+
+function isFileSystemError(error: unknown): error is NodeJS.ErrnoException {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    typeof error.code === 'string'
+  );
 }
