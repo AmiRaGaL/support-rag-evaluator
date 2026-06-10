@@ -33,4 +33,18 @@ describe('ListQueryDto', () => {
       ]),
     );
   });
+
+  it('rejects null list limits', () => {
+    const dto = plainToInstance(ListQueryDto, {
+      limit: null,
+    });
+
+    expect(validateSync(dto)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          property: 'limit',
+        }),
+      ]),
+    );
+  });
 });

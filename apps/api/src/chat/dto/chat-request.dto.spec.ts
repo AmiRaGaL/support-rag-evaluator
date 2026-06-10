@@ -43,4 +43,19 @@ describe('ChatRequestDto', () => {
       ]),
     );
   });
+
+  it('rejects null limits', () => {
+    const dto = plainToInstance(ChatRequestDto, {
+      question: 'How do I update billing?',
+      limit: null,
+    });
+
+    expect(validateSync(dto)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          property: 'limit',
+        }),
+      ]),
+    );
+  });
 });

@@ -59,4 +59,19 @@ describe('RetrievalSearchQueryDto', () => {
       ]),
     );
   });
+
+  it('rejects null limits', () => {
+    const dto = plainToInstance(RetrievalSearchQueryDto, {
+      q: 'billing export',
+      limit: null,
+    });
+
+    expect(validateSync(dto)).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          property: 'limit',
+        }),
+      ]),
+    );
+  });
 });

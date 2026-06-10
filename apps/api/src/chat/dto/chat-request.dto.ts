@@ -2,10 +2,10 @@ import { Transform, Type } from 'class-transformer';
 import {
   IsInt,
   IsNotEmpty,
-  IsOptional,
   IsString,
   Max,
   Min,
+  ValidateIf,
 } from 'class-validator';
 
 export class ChatRequestDto {
@@ -16,7 +16,7 @@ export class ChatRequestDto {
   @IsNotEmpty()
   question!: string;
 
-  @IsOptional()
+  @ValidateIf((_, value: unknown) => value !== undefined)
   @Type(() => Number)
   @IsInt()
   @Min(1)

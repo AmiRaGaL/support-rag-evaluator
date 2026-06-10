@@ -15,7 +15,9 @@ export function createApiValidationPipe(): ValidationPipe {
     },
     exceptionFactory: (errors) =>
       new BadRequestException({
+        statusCode: 400,
         message: 'Request validation failed',
+        error: 'Bad Request',
         errors: flattenValidationErrors(errors),
       }),
   });

@@ -38,6 +38,13 @@ describe('API validation and error handling', () => {
         limit: 21,
       });
     });
+
+    it('returns 400 when limit is null', async () => {
+      await expectValidationError(ChatRequestDto, {
+        question: 'How do I update billing?',
+        limit: null,
+      });
+    });
   });
 
   describe('retrieval search validation', () => {
@@ -49,6 +56,13 @@ describe('API validation and error handling', () => {
       await expectValidationError(RetrievalSearchBodyDto, {
         query: 'billing',
         limit: 0,
+      });
+    });
+
+    it('returns 400 when POST /retrieval/search limit is null', async () => {
+      await expectValidationError(RetrievalSearchBodyDto, {
+        query: 'billing',
+        limit: null,
       });
     });
 
@@ -74,6 +88,16 @@ describe('API validation and error handling', () => {
         ListQueryDto,
         {
           limit: 'abc',
+        },
+        'query',
+      );
+    });
+
+    it('returns 400 for null list limits', async () => {
+      await expectValidationError(
+        ListQueryDto,
+        {
+          limit: null,
         },
         'query',
       );
@@ -206,11 +230,15 @@ async function expectValidationError(
     expect((error as BadRequestException).getStatus()).toBe(400);
 
     const body = response as {
+      statusCode?: unknown;
       message?: unknown;
+      error?: unknown;
       errors?: unknown;
     };
 
+    expect(body.statusCode).toBe(400);
     expect(body.message).toBe('Request validation failed');
+    expect(body.error).toBe('Bad Request');
     expect(Array.isArray(body.errors)).toBe(true);
     expect((body.errors as unknown[]).length).toBeGreaterThan(0);
   }

@@ -2,10 +2,10 @@ import { Transform, Type } from 'class-transformer';
 import {
   IsInt,
   IsNotEmpty,
-  IsOptional,
   IsString,
   Max,
   Min,
+  ValidateIf,
 } from 'class-validator';
 
 export class RetrievalSearchBodyDto {
@@ -16,7 +16,7 @@ export class RetrievalSearchBodyDto {
   @IsNotEmpty()
   query!: string;
 
-  @IsOptional()
+  @ValidateIf((_, value: unknown) => value !== undefined)
   @Type(() => Number)
   @IsInt()
   @Min(1)
@@ -32,7 +32,7 @@ export class RetrievalSearchQueryDto {
   @IsNotEmpty()
   q!: string;
 
-  @IsOptional()
+  @ValidateIf((_, value: unknown) => value !== undefined)
   @Type(() => Number)
   @IsInt()
   @Min(1)
