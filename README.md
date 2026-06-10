@@ -212,6 +212,56 @@ curl -X POST http://localhost:3001/chat \
 }
 ```
 
+### Local baseline eval runner
+
+The baseline eval runner uses `datasets/evals/baseline.json`, ingests the
+sample support docs, embeds any missing chunks with the deterministic fake
+embedding provider, and runs each eval case through the same `/chat` service
+path. It does not call external LLM APIs and does not require API keys.
+
+Before running evals, start PostgreSQL, apply migrations, and run the API:
+
+```bash
+docker compose up -d
+cd apps/api
+npx prisma migrate dev
+npm run start:dev
+```
+
+Run the baseline eval suite:
+
+```bash
+curl -X POST http://localhost:3001/evals/run-baseline
+```
+
+The response includes aggregate metrics and per-case scores:
+
+```json
+{
+  "dataset": "/absolute/path/to/datasets/evals/baseline.json",
+  "metrics": {
+    "totalCases": 3,
+    "refusalAccuracy": 1,
+    "citationAccuracy": 1,
+    "answerMatchAccuracy": 1,
+    "overallAccuracy": 1
+  },
+  "results": [
+    {
+      "id": "eval_001",
+      "question": "How do I reset my password?",
+      "type": "supported",
+      "expectedSources": ["account-management"],
+      "score": {
+        "refusalCorrect": true,
+        "citationCorrect": true,
+        "answerMatch": true
+      }
+    }
+  ]
+}
+```
+
 ## CI
 
 Pull requests to `main` and pushes to `main` run the API CI workflow.
