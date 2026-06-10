@@ -84,6 +84,17 @@ describe('QueryLogsController', () => {
     expect(queryLogsService.listRecentRagQueryLogs).toHaveBeenCalledWith(20);
   });
 
+  it('uses the default limit when no limit query value is provided', async () => {
+    queryLogsService.listRecentRagQueryLogs.mockResolvedValue([]);
+    const controller = new QueryLogsController(
+      queryLogsService as unknown as QueryLogsService,
+    );
+
+    await expect(controller.listQueryLogs(undefined)).resolves.toEqual([]);
+
+    expect(queryLogsService.listRecentRagQueryLogs).toHaveBeenCalledWith(20);
+  });
+
   it('returns one query log by id', async () => {
     const createdAt = new Date('2026-06-10T00:00:00.000Z');
     queryLogsService.findRagQueryLogById.mockResolvedValue({
