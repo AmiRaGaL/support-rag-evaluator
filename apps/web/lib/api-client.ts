@@ -32,31 +32,12 @@ export interface ChatCitation {
   snippet: string;
 }
 
-export interface ChatRetrievedChunk {
-  id?: string;
-  chunkId?: string;
-  documentId: string;
-  documentTitle: string;
-  sourceKey: string;
-  chunkIndex: number;
-  content?: string;
-  snippet?: string;
-  score?: number;
-  similarity?: number;
-}
-
-interface ChatResponseMetadata {
+export interface ChatAnswerResponse {
+  status: "answered";
   question: string;
   answer: string;
   citations: ChatCitation[];
-  confidence?: number | null;
-  refusal?: boolean;
-  retrievedChunks?: ChatRetrievedChunk[];
   retrievedChunkCount: number;
-}
-
-export interface ChatAnswerResponse extends ChatResponseMetadata {
-  status: "answered";
 }
 
 export interface ChatRefusalResponse {
@@ -64,22 +45,11 @@ export interface ChatRefusalResponse {
   question: string;
   answer: string;
   citations: [];
-  confidence?: number | null;
-  refusal?: boolean;
-  retrievedChunks?: ChatRetrievedChunk[];
+  refusalReason: ChatRefusalReason;
   retrievedChunkCount: number;
-  refusalReason: ChatRefusalReason;
 }
 
-export interface LegacyChatRefusalResponse extends ChatResponseMetadata {
-  status: "refused";
-  refusalReason: ChatRefusalReason;
-}
-
-export type ChatResponse =
-  | ChatAnswerResponse
-  | ChatRefusalResponse
-  | LegacyChatRefusalResponse;
+export type ChatResponse = ChatAnswerResponse | ChatRefusalResponse;
 
 export interface QueryLogRetrievedChunk {
   chunkId: string;
@@ -244,7 +214,13 @@ async function request<T>(path: string, options: RequestOptions = {}): Promise<T
 }
 
 function buildApiUrl(path: string) {
-  return `${apiBaseUrl}${path.startsWith("/") ? path : `/${path}`}`;
+  const normalizedPath = path.startsWith("/") ? path : `/${path}`;
+
+  if (typeof window !== "undefined") {
+    return `/api/backend${normalizedPath}`;
+  }
+
+  return `${apiBaseUrl}${normalizedPath}`;
 }
 
 function withLimit(path: string, limit?: number) {

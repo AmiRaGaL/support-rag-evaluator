@@ -2,10 +2,13 @@
 
 import { FormEvent, ReactNode, useState } from "react";
 import {
+  listQueryLogs,
   sendChatMessage,
   type ChatResponse,
-  type ChatRetrievedChunk,
+  type QueryLog,
+  type QueryLogRetrievedChunk,
 } from "@/lib/api-client";
+import { formatConfidence } from "@/lib/formatters";
 
 const DEFAULT_LIMIT = 5;
 
@@ -13,6 +16,7 @@ export default function ChatPage() {
   const [question, setQuestion] = useState("");
   const [limit, setLimit] = useState(DEFAULT_LIMIT);
   const [response, setResponse] = useState<ChatResponse | null>(null);
+  const [queryLog, setQueryLog] = useState<QueryLog | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
@@ -24,6 +28,7 @@ export default function ChatPage() {
     if (!trimmedQuestion) {
       setError("Enter a support question before sending.");
       setResponse(null);
+      setQueryLog(null);
       return;
     }
 
@@ -37,8 +42,10 @@ export default function ChatPage() {
       });
 
       setResponse(result);
+      setQueryLog(await findMatchingQueryLog(result));
     } catch (caughtError) {
       setResponse(null);
+      setQueryLog(null);
       setError(
         caughtError instanceof Error
           ? caughtError.message
@@ -50,8 +57,8 @@ export default function ChatPage() {
   }
 
   const isRefusal =
-    response?.status === "refused" || response?.refusal === true;
-  const retrievedChunks = response?.retrievedChunks ?? [];
+    response?.status === "refused";
+  const retrievedChunks = queryLog?.retrievedChunks ?? [];
 
   return (
     <div className="chat-page">
@@ -119,7 +126,7 @@ export default function ChatPage() {
           <dl className="response-metadata">
             <div>
               <dt>Confidence</dt>
-              <dd>{formatConfidence(response.confidence)}</dd>
+              <dd>{formatConfidence(queryLog?.confidence)}</dd>
             </div>
             <div>
               <dt>Retrieved chunks</dt>
@@ -128,7 +135,7 @@ export default function ChatPage() {
           </dl>
 
           <ResultList
-            emptyText="No retrieved chunk details were returned with this response."
+            emptyText="No retrieved chunk details were found in the query log yet."
             items={retrievedChunks}
             renderItem={(chunk, index) => (
               <RetrievedChunkItem chunk={chunk} index={index} />
@@ -190,12 +197,9 @@ function RetrievedChunkItem({
   chunk,
   index,
 }: {
-  chunk: ChatRetrievedChunk;
+  chunk: QueryLogRetrievedChunk;
   index: number;
 }) {
-  const score = chunk.similarity ?? chunk.score;
-  const excerpt = chunk.snippet ?? chunk.content;
-
   return (
     <>
       <div className="item-title">
@@ -203,20 +207,12 @@ function RetrievedChunkItem({
         <span>{chunk.sourceKey}</span>
       </div>
       <p>
-        Chunk {chunk.chunkIndex}
-        {score === undefined ? "" : ` · Score ${score.toFixed(3)}`}
+        Chunk {chunk.chunkIndex} · Similarity {chunk.similarity.toFixed(3)} ·{" "}
+        {chunk.citationUsed ? "Cited" : "Not cited"}
       </p>
-      <blockquote>{excerpt ?? `Retrieved chunk ${index + 1}`}</blockquote>
+      <blockquote>{`Retrieved chunk ${index + 1}`}</blockquote>
     </>
   );
-}
-
-function formatConfidence(confidence: number | null | undefined) {
-  if (confidence === null || confidence === undefined) {
-    return "Not returned";
-  }
-
-  return `${Math.round(confidence * 100)}%`;
 }
 
 function getItemKey(item: unknown, index: number) {
@@ -234,4 +230,19 @@ function getItemKey(item: unknown, index: number) {
   }
 
   return String(index);
+}
+
+async function findMatchingQueryLog(response: ChatResponse) {
+  try {
+    const logs = await listQueryLogs({ limit: 10 });
+
+    return (
+      logs.find(
+        (log) =>
+          log.question === response.question && log.answer === response.answer,
+      ) ?? null
+    );
+  } catch {
+    return null;
+  }
 }

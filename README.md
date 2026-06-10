@@ -99,8 +99,11 @@ dashboard includes:
 - Eval Runs: recent baseline eval runs, run details, and a button to run the
   baseline eval.
 
-The dashboard reads the API URL from `NEXT_PUBLIC_API_BASE_URL`. For local
-development, create `apps/web/.env.local` or export:
+The dashboard reads the upstream API URL from `NEXT_PUBLIC_API_BASE_URL`.
+Server-rendered dashboard checks use that URL directly, and browser-side
+dashboard requests use a same-origin Next.js proxy so local development does
+not require changing API CORS settings. For local development, create
+`apps/web/.env.local` or export:
 
 ```bash
 NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
