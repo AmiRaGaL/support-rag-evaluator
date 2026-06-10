@@ -81,6 +81,23 @@ curl "http://localhost:3001/query-logs?limit=10"
 curl -X POST http://localhost:3001/evals/run-baseline
 ```
 
+### API documentation
+
+Swagger UI is available at:
+
+```text
+http://localhost:3001/docs
+```
+
+Use the same URL whether the API is running through Docker Compose or locally
+with `npm run start:dev` from `apps/api`. The docs cover the main support RAG
+workflows: health, ingestion, retrieval, chat, query logs, and evals.
+
+The deterministic provider is the default and does not require API keys, which
+keeps local development and CI offline-friendly. Groq can be enabled locally
+with `LLM_PROVIDER=groq` and the related Groq environment variables, but it is
+optional and not required to use the documented API.
+
 ### Apply database migrations
 
 ```bash
