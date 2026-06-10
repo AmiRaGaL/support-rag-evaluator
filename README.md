@@ -154,7 +154,7 @@ curl -X POST http://localhost:3001/retrieval/search \
 
 The `/chat` endpoint performs retrieval and then builds a deterministic,
 grounded answer from retrieved chunks. It does not call an external LLM and
-does not require API keys.
+does not require API keys unless `LLM_PROVIDER=groq` is configured.
 
 Before chatting, ingest documents and embed chunks:
 
@@ -189,7 +189,24 @@ answer:
       "snippet": "## Billing history Users can export billing history from Settings > Billing > Export History."
     }
   ],
-  "retrievedChunkCount": 3
+  "refusal": false,
+  "confidence": 0.7,
+  "retrievedChunks": [
+    {
+      "id": "chunk_id",
+      "documentId": "document_id",
+      "documentTitle": "Billing",
+      "sourceKey": "billing",
+      "sourcePath": "/absolute/path/to/datasets/sample-docs/billing.md",
+      "chunkIndex": 0,
+      "content": "## Billing history\n\nUsers can export billing history from Settings > Billing > Export History.",
+      "tokenCount": 14,
+      "metadata": null,
+      "distance": 0.12,
+      "score": 0.88
+    }
+  ],
+  "retrievedChunkCount": 1
 }
 ```
 
@@ -207,10 +224,43 @@ curl -X POST http://localhost:3001/chat \
   "question": "Can I export audit logs?",
   "answer": "I found related documentation, but it does not contain enough matching support details to answer this question.",
   "citations": [],
+  "refusal": true,
+  "confidence": 0,
+  "retrievedChunks": [
+    {
+      "id": "chunk_id",
+      "documentId": "document_id",
+      "documentTitle": "Billing",
+      "sourceKey": "billing",
+      "sourcePath": "/absolute/path/to/datasets/sample-docs/billing.md",
+      "chunkIndex": 0,
+      "content": "Customers can update billing settings from the billing page.",
+      "tokenCount": 9,
+      "metadata": null,
+      "distance": 0.22,
+      "score": 0.78
+    }
+  ],
   "refusalReason": "insufficient_overlap",
-  "retrievedChunkCount": 3
+  "retrievedChunkCount": 1
 }
 ```
+
+### Optional Groq LLM provider
+
+By default, chat uses the deterministic offline provider so tests and CI do not
+need external API keys. To use Groq for OpenAI-compatible chat completions,
+configure the API environment:
+
+```bash
+LLM_PROVIDER=groq
+GROQ_API_KEY="gsk_..."
+GROQ_CHAT_MODEL="llama-3.1-8b-instant"
+```
+
+`GROQ_BASE_URL` defaults to `https://api.groq.com/openai/v1`. Groq is only
+constructed when `LLM_PROVIDER=groq`; leaving `LLM_PROVIDER` unset, or setting
+it to `deterministic`, keeps the API fully offline after retrieval.
 
 ### Local baseline eval runner
 
