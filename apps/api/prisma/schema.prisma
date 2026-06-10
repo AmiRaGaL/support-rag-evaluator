@@ -69,3 +69,47 @@ model RagRetrievedChunk {
   @@index([sourceKey])
   @@index([citationUsed])
 }
+
+model EvalRun {
+  id                  String           @id @default(cuid())
+  name                String
+  datasetPath         String
+  totalCases          Int
+  passedCases         Int
+  failedCases         Int
+  refusalAccuracy     Float
+  citationAccuracy    Float
+  answerMatchAccuracy Float
+  provider            String
+  createdAt           DateTime         @default(now())
+  caseResults         EvalCaseResult[]
+
+  @@index([createdAt])
+  @@index([provider])
+}
+
+model EvalCaseResult {
+  id               String   @id @default(cuid())
+  evalRunId        String
+  caseId           String
+  question         String
+  type             String
+  passed           Boolean
+  expectedAnswer   String
+  expectedSources  Json
+  actualAnswer     String
+  actualRefusal    Boolean
+  actualConfidence Float?
+  actualCitations  Json
+  refusalCorrect   Boolean
+  citationCorrect  Boolean
+  answerMatch      Boolean
+  createdAt        DateTime @default(now())
+
+  evalRun EvalRun @relation(fields: [evalRunId], references: [id], onDelete: Cascade)
+
+  @@index([evalRunId])
+  @@index([caseId])
+  @@index([passed])
+  @@index([type])
+}

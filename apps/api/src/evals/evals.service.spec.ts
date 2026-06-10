@@ -1,10 +1,269 @@
 import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import * as path from 'path';
+import { ChatService } from '../chat/chat.service';
+import { IngestionService } from '../ingestion/ingestion.service';
+import { LlmService } from '../llm/llm.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { RetrievalService } from '../retrieval/retrieval.service';
+import type { BaselineEvalCase } from './eval.types';
 import {
+  EvalsService,
   parseBaselineEvalCases,
   resolveBaselineEvalDatasetPath,
 } from './evals.service';
+
+interface EvalRunCreateInput {
+  data: {
+    name: string;
+    datasetPath: string;
+    totalCases: number;
+    passedCases: number;
+    failedCases: number;
+    refusalAccuracy: number;
+    citationAccuracy: number;
+    answerMatchAccuracy: number;
+    provider: string;
+    caseResults: {
+      create: unknown[];
+    };
+  };
+  select: {
+    id: boolean;
+  };
+}
+
+describe('EvalsService', () => {
+  it('persists a baseline eval run and returns the saved run id', async () => {
+    const evalCases: BaselineEvalCase[] = [
+      {
+        id: 'eval_supported',
+        question: 'How do I export billing history?',
+        expectedAnswer: 'Users can export billing history from billing.',
+        expectedSources: ['billing'],
+        type: 'supported',
+      },
+      {
+        id: 'eval_unsupported',
+        question: 'Can I use the product as a toaster?',
+        expectedAnswer: 'The assistant should refuse unsupported questions.',
+        expectedSources: [],
+        type: 'unsupported',
+      },
+    ];
+    const ingestionService = {
+      ingestSampleDocs: jest.fn().mockResolvedValue(undefined),
+    };
+    const retrievalService = {
+      embedMissingChunks: jest.fn().mockResolvedValue(undefined),
+    };
+    const chatService = {
+      answerQuestionWithMetadata: jest
+        .fn()
+        .mockResolvedValueOnce({
+          response: {
+            status: 'answered',
+            question: 'How do I export billing history?',
+            answer: 'Users can export billing history from billing settings.',
+            citations: [
+              {
+                chunkId: 'chunk_1',
+                documentId: 'doc_1',
+                documentTitle: 'Billing',
+                sourceKey: 'billing',
+                chunkIndex: 0,
+                snippet: 'Users can export billing history from billing.',
+              },
+            ],
+            retrievedChunkCount: 1,
+          },
+          confidence: 0.82,
+        })
+        .mockResolvedValueOnce({
+          response: {
+            status: 'refused',
+            question: 'Can I use the product as a toaster?',
+            answer:
+              'I could not find support documentation that answers this question.',
+            citations: [],
+            refusalReason: 'unsupported_by_retrieved_chunks',
+            retrievedChunkCount: 1,
+          },
+          confidence: 0.15,
+        }),
+    };
+    const tx = {
+      evalRun: {
+        create: jest
+          .fn<Promise<{ id: string }>, [EvalRunCreateInput]>()
+          .mockResolvedValue({ id: 'eval_run_1' }),
+      },
+    };
+    const prisma = {
+      $transaction: jest.fn((callback: (txArg: typeof tx) => unknown) =>
+        callback(tx),
+      ),
+    };
+    const llmService = {
+      getProviderName: jest.fn().mockReturnValue('deterministic'),
+    };
+    const service = new EvalsService(
+      ingestionService as unknown as IngestionService,
+      retrievalService as unknown as RetrievalService,
+      chatService as unknown as ChatService,
+      prisma as unknown as PrismaService,
+      llmService as unknown as LlmService,
+    );
+
+    jest
+      .spyOn(
+        service as unknown as {
+          readBaselineCases: (
+            datasetPath: string,
+          ) => Promise<BaselineEvalCase[]>;
+        },
+        'readBaselineCases',
+      )
+      .mockResolvedValue(evalCases);
+
+    const result = await service.runBaseline();
+
+    expect(result.evalRunId).toBe('eval_run_1');
+    expect(result.metrics).toEqual({
+      totalCases: 2,
+      refusalAccuracy: 1,
+      citationAccuracy: 1,
+      answerMatchAccuracy: 1,
+      overallAccuracy: 1,
+    });
+    expect(prisma.$transaction).toHaveBeenCalledTimes(1);
+    const createInput = tx.evalRun.create.mock.calls[0]?.[0];
+
+    if (!createInput) {
+      throw new Error('Expected EvalRun create input.');
+    }
+
+    expect(createInput.select).toEqual({
+      id: true,
+    });
+    expect(createInput.data).toMatchObject({
+      name: 'baseline',
+      datasetPath: result.dataset,
+      totalCases: 2,
+      passedCases: 2,
+      failedCases: 0,
+      refusalAccuracy: 1,
+      citationAccuracy: 1,
+      answerMatchAccuracy: 1,
+      provider: 'deterministic',
+    });
+    expect(createInput.data.caseResults.create).toHaveLength(2);
+    expect(createInput.data.caseResults.create[0]).toMatchObject({
+      caseId: 'eval_supported',
+      question: 'How do I export billing history?',
+      type: 'supported',
+      passed: true,
+      expectedAnswer: 'Users can export billing history from billing.',
+      expectedSources: ['billing'],
+      actualAnswer: 'Users can export billing history from billing settings.',
+      actualRefusal: false,
+      actualConfidence: 0.82,
+      actualCitations: [
+        expect.objectContaining({
+          chunkId: 'chunk_1',
+          sourceKey: 'billing',
+        }),
+      ],
+      refusalCorrect: true,
+      citationCorrect: true,
+      answerMatch: true,
+    });
+    expect(createInput.data.caseResults.create[1]).toMatchObject({
+      caseId: 'eval_unsupported',
+      type: 'unsupported',
+      passed: true,
+      expectedSources: [],
+      actualRefusal: true,
+      actualConfidence: 0.15,
+      actualCitations: [],
+      refusalCorrect: true,
+      citationCorrect: true,
+      answerMatch: true,
+    });
+    expect(tx.evalRun.create).toHaveBeenCalledWith({
+      data: createInput.data,
+      select: {
+        id: true,
+      },
+    });
+    expect(llmService.getProviderName).toHaveBeenCalledTimes(1);
+  });
+
+  it('lists recent persisted eval runs in descending creation order', async () => {
+    const prisma = {
+      evalRun: {
+        findMany: jest.fn().mockResolvedValue([{ id: 'eval_run_2' }]),
+      },
+    };
+    const service = new EvalsService(
+      {} as unknown as IngestionService,
+      {} as unknown as RetrievalService,
+      {} as unknown as ChatService,
+      prisma as unknown as PrismaService,
+      {} as unknown as LlmService,
+    );
+
+    await expect(service.listRecentEvalRuns(10)).resolves.toEqual([
+      { id: 'eval_run_2' },
+    ]);
+
+    expect(prisma.evalRun.findMany).toHaveBeenCalledWith({
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 10,
+      include: {
+        caseResults: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+      },
+    });
+  });
+
+  it('finds one persisted eval run with per-case results by id', async () => {
+    const prisma = {
+      evalRun: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'eval_run_1' }),
+      },
+    };
+    const service = new EvalsService(
+      {} as unknown as IngestionService,
+      {} as unknown as RetrievalService,
+      {} as unknown as ChatService,
+      prisma as unknown as PrismaService,
+      {} as unknown as LlmService,
+    );
+
+    await expect(service.findEvalRunById('eval_run_1')).resolves.toEqual({
+      id: 'eval_run_1',
+    });
+
+    expect(prisma.evalRun.findUnique).toHaveBeenCalledWith({
+      where: {
+        id: 'eval_run_1',
+      },
+      include: {
+        caseResults: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+      },
+    });
+  });
+});
 
 describe('eval dataset utilities', () => {
   describe('resolveBaselineEvalDatasetPath', () => {

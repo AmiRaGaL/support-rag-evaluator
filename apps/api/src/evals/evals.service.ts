@@ -1,9 +1,12 @@
 import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import type { Prisma } from '@prisma/client';
 import { existsSync } from 'fs';
 import { promises as fs } from 'fs';
 import * as path from 'path';
 import { ChatService } from '../chat/chat.service';
 import { IngestionService } from '../ingestion/ingestion.service';
+import { LlmService } from '../llm/llm.service';
+import { PrismaService } from '../prisma/prisma.service';
 import { RetrievalService } from '../retrieval/retrieval.service';
 import { scoreEvalCase } from './eval-scorer';
 import type {
@@ -12,6 +15,16 @@ import type {
   EvalAggregateMetrics,
   EvalCaseResult,
 } from './eval.types';
+
+export type PersistedEvalRunWithCaseResults = Prisma.EvalRunGetPayload<{
+  include: {
+    caseResults: {
+      orderBy: {
+        createdAt: 'asc';
+      };
+    };
+  };
+}>;
 
 const BASELINE_EVAL_DATASET_RELATIVE_PATH = path.join(
   'datasets',
@@ -25,6 +38,8 @@ export class EvalsService {
     private readonly ingestionService: IngestionService,
     private readonly retrievalService: RetrievalService,
     private readonly chatService: ChatService,
+    private readonly prisma: PrismaService,
+    private readonly llmService: LlmService,
   ) {}
 
   async runBaseline(): Promise<BaselineEvalRunResult> {
@@ -37,9 +52,10 @@ export class EvalsService {
     const results: EvalCaseResult[] = [];
 
     for (const evalCase of evalCases) {
-      const response = await this.chatService.answerQuestion({
+      const result = await this.chatService.answerQuestionWithMetadata({
         question: evalCase.question,
       });
+      const response = result.response;
       const score = scoreEvalCase(evalCase, response);
 
       results.push({
@@ -49,15 +65,116 @@ export class EvalsService {
         expectedAnswer: evalCase.expectedAnswer,
         expectedSources: evalCase.expectedSources,
         response,
+        actualConfidence: result.confidence,
         score,
       });
     }
 
+    const metrics = this.calculateMetrics(results);
+    const evalRun = await this.persistEvalRun({
+      datasetPath,
+      metrics,
+      results,
+    });
+
     return {
+      evalRunId: evalRun.id,
       dataset: datasetPath,
-      metrics: this.calculateMetrics(results),
+      metrics,
       results,
     };
+  }
+
+  async listRecentEvalRuns(
+    limit: number,
+  ): Promise<PersistedEvalRunWithCaseResults[]> {
+    return this.prisma.evalRun.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: limit,
+      include: {
+        caseResults: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+      },
+    });
+  }
+
+  async findEvalRunById(
+    id: string,
+  ): Promise<PersistedEvalRunWithCaseResults | null> {
+    return this.prisma.evalRun.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        caseResults: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+      },
+    });
+  }
+
+  private async persistEvalRun(input: {
+    datasetPath: string;
+    metrics: EvalAggregateMetrics;
+    results: EvalCaseResult[];
+  }): Promise<{ id: string }> {
+    const passedCases = input.results.filter((result) =>
+      this.isCasePassed(result),
+    ).length;
+    const failedCases = input.results.length - passedCases;
+    const provider = this.llmService.getProviderName();
+
+    return this.prisma.$transaction(async (tx) =>
+      tx.evalRun.create({
+        data: {
+          name: 'baseline',
+          datasetPath: input.datasetPath,
+          totalCases: input.metrics.totalCases,
+          passedCases,
+          failedCases,
+          refusalAccuracy: input.metrics.refusalAccuracy,
+          citationAccuracy: input.metrics.citationAccuracy,
+          answerMatchAccuracy: input.metrics.answerMatchAccuracy,
+          provider,
+          caseResults: {
+            create: input.results.map((result) => ({
+              caseId: result.id,
+              question: result.question,
+              type: result.type,
+              passed: this.isCasePassed(result),
+              expectedAnswer: result.expectedAnswer,
+              expectedSources: result.expectedSources,
+              actualAnswer: result.response.answer,
+              actualRefusal: result.response.status === 'refused',
+              actualConfidence: result.actualConfidence,
+              actualCitations: result.response
+                .citations as Prisma.InputJsonValue,
+              refusalCorrect: result.score.refusalCorrect,
+              citationCorrect: result.score.citationCorrect,
+              answerMatch: result.score.answerMatch,
+            })),
+          },
+        },
+        select: {
+          id: true,
+        },
+      }),
+    );
+  }
+
+  private isCasePassed(result: EvalCaseResult): boolean {
+    return (
+      result.score.refusalCorrect &&
+      result.score.citationCorrect &&
+      result.score.answerMatch
+    );
   }
 
   private async readBaselineCases(

@@ -285,12 +285,18 @@ GROQ_CHAT_MODEL="llama-3.1-8b-instant"
 constructed when `LLM_PROVIDER=groq`; leaving `LLM_PROVIDER` unset, or setting
 it to `deterministic`, keeps the API fully offline after retrieval.
 
-### Local baseline eval runner
+### Persisted eval runs
 
 The baseline eval runner uses `datasets/evals/baseline.json`, ingests the
 sample support docs, embeds any missing chunks with the deterministic fake
 embedding provider, and runs each eval case through the same `/chat` service
-path. It does not call external LLM APIs and does not require API keys.
+path. Each run is persisted so RAG quality can be tracked over time across
+retrieval, refusal, citation, and answer-match metrics.
+
+The deterministic provider remains the CI-safe default and does not require
+external API keys. To try Groq locally, set `LLM_PROVIDER=groq` and
+`GROQ_API_KEY` in `apps/api/.env`; provider names are stored with eval runs,
+but API keys and secrets are not.
 
 Before running evals, start PostgreSQL, apply migrations, and run the API:
 
@@ -301,16 +307,18 @@ npx prisma migrate dev
 npm run start:dev
 ```
 
-Run the baseline eval suite:
+Run and persist the baseline eval suite:
 
 ```bash
 curl -X POST http://localhost:3001/evals/run-baseline
 ```
 
-The response includes aggregate metrics and per-case scores:
+The response includes the persisted `evalRunId`, aggregate metrics, and
+per-case scores:
 
 ```json
 {
+  "evalRunId": "eval_run_id",
   "dataset": "/absolute/path/to/datasets/evals/baseline.json",
   "metrics": {
     "totalCases": 3,
@@ -333,6 +341,18 @@ The response includes aggregate metrics and per-case scores:
     }
   ]
 }
+```
+
+List recent persisted eval runs:
+
+```bash
+curl "http://localhost:3001/evals/runs?limit=10"
+```
+
+Inspect one eval run with per-case results:
+
+```bash
+curl http://localhost:3001/evals/runs/eval_run_id
 ```
 
 ## CI
