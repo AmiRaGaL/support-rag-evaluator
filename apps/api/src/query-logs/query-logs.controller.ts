@@ -5,7 +5,14 @@ import {
   Param,
   Query,
 } from '@nestjs/common';
-import { ApiNotFoundResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiInternalServerErrorResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+} from '@nestjs/swagger';
 import { IdParamDto } from '../common/dto/id-param.dto';
 import { DEFAULT_LIST_LIMIT, ListQueryDto } from '../common/dto/list-query.dto';
 import {
@@ -20,9 +27,20 @@ export class QueryLogsController {
   constructor(private readonly queryLogsService: QueryLogsService) {}
 
   @Get()
+  @ApiOperation({
+    summary: 'List recent RAG query logs',
+    description:
+      'Returns recent query logs with retrieved chunk metadata. Logs include the provider used; deterministic is the default provider and Groq appears only if configured for the original query.',
+  })
   @ApiOkResponse({
     description: 'Recent RAG query logs ordered newest first.',
     type: [QueryLogResponseDto],
+  })
+  @ApiBadRequestResponse({
+    description: 'The query parameters failed validation.',
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Query log retrieval failed.',
   })
   async listQueryLogs(@Query() query: ListQueryDto) {
     const logs = await this.queryLogsService.listRecentRagQueryLogs(
@@ -33,12 +51,23 @@ export class QueryLogsController {
   }
 
   @Get(':id')
+  @ApiOperation({
+    summary: 'Get a RAG query log',
+    description:
+      'Returns one query log with retrieved chunk metadata and the provider used for the original answer.',
+  })
   @ApiOkResponse({
     description: 'RAG query log detail.',
     type: QueryLogResponseDto,
   })
+  @ApiBadRequestResponse({
+    description: 'The id parameter failed validation.',
+  })
   @ApiNotFoundResponse({
     description: 'No query log exists for the supplied id.',
+  })
+  @ApiInternalServerErrorResponse({
+    description: 'Query log retrieval failed.',
   })
   async getQueryLog(@Param() params: IdParamDto) {
     const log = await this.queryLogsService.findRagQueryLogById(params.id);
