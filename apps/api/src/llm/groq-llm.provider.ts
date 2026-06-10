@@ -19,6 +19,8 @@ export interface GroqLlmProviderOptions {
 
 @Injectable()
 export class GroqLlmProvider implements LlmProvider {
+  readonly providerName = 'groq';
+
   private readonly client: OpenAI;
   private readonly model: string;
 

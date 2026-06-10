@@ -8,27 +8,45 @@ export const LLM_PROVIDER = Symbol('LLM_PROVIDER');
 export class LlmService {
   constructor(@Inject(LLM_PROVIDER) private readonly provider: LlmProvider) {}
 
+  getProviderName(): string {
+    return this.provider.providerName || this.provider.constructor.name;
+  }
+
   async generateGroundedAnswer(
     input: GenerateGroundedAnswerInput,
   ): Promise<ChatResponse> {
+    const result = await this.generateGroundedAnswerWithMetadata(input);
+
+    return result.response;
+  }
+
+  async generateGroundedAnswerWithMetadata(
+    input: GenerateGroundedAnswerInput,
+  ): Promise<{ response: ChatResponse; confidence: number }> {
     const normalizedQuestion = input.question.trim();
 
     if (!normalizedQuestion) {
-      return this.refuse(
-        normalizedQuestion,
-        'empty_question',
-        0,
-        'Ask a support question so I can look for an answer in the documentation.',
-      );
+      return {
+        response: this.refuse(
+          normalizedQuestion,
+          'empty_question',
+          0,
+          'Ask a support question so I can look for an answer in the documentation.',
+        ),
+        confidence: 0,
+      };
     }
 
     if (input.chunks.length === 0) {
-      return this.refuse(
-        normalizedQuestion,
-        'no_retrieved_chunks',
-        0,
-        'I could not find support documentation that answers this question.',
-      );
+      return {
+        response: this.refuse(
+          normalizedQuestion,
+          'no_retrieved_chunks',
+          0,
+          'I could not find support documentation that answers this question.',
+        ),
+        confidence: 0,
+      };
     }
 
     const answer = await this.provider.generateGroundedAnswer({
@@ -38,22 +56,28 @@ export class LlmService {
 
     if (answer.refusal) {
       return {
-        status: 'refused',
-        question: normalizedQuestion,
-        answer: answer.answer,
-        citations: [],
-        refusalReason:
-          answer.refusalReason ?? 'unsupported_by_retrieved_chunks',
-        retrievedChunkCount: input.chunks.length,
+        response: {
+          status: 'refused',
+          question: normalizedQuestion,
+          answer: answer.answer,
+          citations: [],
+          refusalReason:
+            answer.refusalReason ?? 'unsupported_by_retrieved_chunks',
+          retrievedChunkCount: input.chunks.length,
+        },
+        confidence: answer.confidence,
       };
     }
 
     return {
-      status: 'answered',
-      question: normalizedQuestion,
-      answer: answer.answer,
-      citations: answer.citations,
-      retrievedChunkCount: input.chunks.length,
+      response: {
+        status: 'answered',
+        question: normalizedQuestion,
+        answer: answer.answer,
+        citations: answer.citations,
+        retrievedChunkCount: input.chunks.length,
+      },
+      confidence: answer.confidence,
     };
   }
 

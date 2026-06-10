@@ -4,6 +4,7 @@ import type { LlmProvider } from './llm.types';
 describe('LlmService', () => {
   const generateGroundedAnswer = jest.fn();
   const provider: jest.Mocked<LlmProvider> = {
+    providerName: 'test-provider',
     generateGroundedAnswer,
   };
 
@@ -49,5 +50,9 @@ describe('LlmService', () => {
       retrievedChunkCount: 0,
     });
     expect(generateGroundedAnswer).not.toHaveBeenCalled();
+  });
+
+  it('exposes the selected provider name without secrets', () => {
+    expect(service().getProviderName()).toBe('test-provider');
   });
 });
