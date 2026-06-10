@@ -82,6 +82,7 @@ POST /chat
 GET /queries
 POST /evals/run
 ```
+
 ## Evaluation goals
 
 The assistant will be evaluated on:
@@ -100,6 +101,7 @@ The backend API lives in:
 ```text
 apps/api
 ```
+
 Run locally:
 
 ```bash
@@ -108,6 +110,7 @@ npm install
 npx prisma migrate dev
 npm run start:dev
 ```
+
 Health check endpoint:
 
 ```bash
@@ -145,6 +148,68 @@ The same search is also available as JSON:
 curl -X POST http://localhost:3001/retrieval/search \
   -H "Content-Type: application/json" \
   -d '{"query":"billing email","limit":5}'
+```
+
+### Local chat workflow
+
+The `/chat` endpoint performs retrieval and then builds a deterministic,
+grounded answer from retrieved chunks. It does not call an external LLM and
+does not require API keys.
+
+Before chatting, ingest documents and embed chunks:
+
+```bash
+curl -X POST http://localhost:3001/ingestion/sample-docs
+curl -X POST http://localhost:3001/retrieval/embed-missing
+```
+
+Ask a supported question:
+
+```bash
+curl -X POST http://localhost:3001/chat \
+  -H "Content-Type: application/json" \
+  -d '{"question":"Can I export billing history?","limit":5}'
+```
+
+Successful responses include citation objects for the chunks used to build the
+answer:
+
+```json
+{
+  "status": "answered",
+  "question": "Can I export billing history?",
+  "answer": "According to the retrieved support documentation:\n1. ## Billing history Users can export billing history from Settings > Billing > Export History.",
+  "citations": [
+    {
+      "chunkId": "chunk_id",
+      "documentId": "document_id",
+      "documentTitle": "Billing",
+      "sourceKey": "billing",
+      "chunkIndex": 0,
+      "snippet": "## Billing history Users can export billing history from Settings > Billing > Export History."
+    }
+  ],
+  "retrievedChunkCount": 3
+}
+```
+
+Unsupported questions are refused instead of answered:
+
+```bash
+curl -X POST http://localhost:3001/chat \
+  -H "Content-Type: application/json" \
+  -d '{"question":"Can I export audit logs?","limit":5}'
+```
+
+```json
+{
+  "status": "refused",
+  "question": "Can I export audit logs?",
+  "answer": "I found related documentation, but it does not contain enough matching support details to answer this question.",
+  "citations": [],
+  "refusalReason": "insufficient_overlap",
+  "retrievedChunkCount": 3
+}
 ```
 
 ## CI
