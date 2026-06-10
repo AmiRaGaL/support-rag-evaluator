@@ -8,5 +8,6 @@ import { GroundedAnswerService } from './grounded-answer.service';
   imports: [RetrievalModule],
   controllers: [ChatController],
   providers: [ChatService, GroundedAnswerService],
+  exports: [ChatService],
 })
 export class ChatModule {}
