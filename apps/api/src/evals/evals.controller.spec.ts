@@ -15,7 +15,7 @@ describe('EvalsController', () => {
     evalsService.runBaseline.mockReset();
   });
 
-  it('returns recent eval runs with a clamped limit', async () => {
+  it('returns recent eval runs with a validated limit', async () => {
     const createdAt = new Date('2026-06-10T00:00:00.000Z');
     evalsService.listRecentEvalRuns.mockResolvedValue([
       persistedRun({ createdAt }),
@@ -24,7 +24,7 @@ describe('EvalsController', () => {
       evalsService as unknown as EvalsService,
     );
 
-    await expect(controller.listEvalRuns('999')).resolves.toEqual([
+    await expect(controller.listEvalRuns({ limit: 50 })).resolves.toEqual([
       {
         id: 'eval_run_1',
         name: 'baseline',
@@ -64,37 +64,26 @@ describe('EvalsController', () => {
     expect(evalsService.listRecentEvalRuns).toHaveBeenCalledWith(50);
   });
 
-  it('uses the default limit for invalid limit query values', async () => {
-    evalsService.listRecentEvalRuns.mockResolvedValue([]);
-    const controller = new EvalsController(
-      evalsService as unknown as EvalsService,
-    );
-
-    await expect(controller.listEvalRuns('not-a-number')).resolves.toEqual([]);
-
-    expect(evalsService.listRecentEvalRuns).toHaveBeenCalledWith(20);
-  });
-
-  it('clamps list limits below the safe range', async () => {
-    evalsService.listRecentEvalRuns.mockResolvedValue([]);
-    const controller = new EvalsController(
-      evalsService as unknown as EvalsService,
-    );
-
-    await expect(controller.listEvalRuns('0')).resolves.toEqual([]);
-
-    expect(evalsService.listRecentEvalRuns).toHaveBeenCalledWith(1);
-  });
-
   it('uses the default limit when no limit query value is provided', async () => {
     evalsService.listRecentEvalRuns.mockResolvedValue([]);
     const controller = new EvalsController(
       evalsService as unknown as EvalsService,
     );
 
-    await expect(controller.listEvalRuns(undefined)).resolves.toEqual([]);
+    await expect(controller.listEvalRuns({})).resolves.toEqual([]);
 
     expect(evalsService.listRecentEvalRuns).toHaveBeenCalledWith(20);
+  });
+
+  it('passes validated list limits through', async () => {
+    evalsService.listRecentEvalRuns.mockResolvedValue([]);
+    const controller = new EvalsController(
+      evalsService as unknown as EvalsService,
+    );
+
+    await expect(controller.listEvalRuns({ limit: 1 })).resolves.toEqual([]);
+
+    expect(evalsService.listRecentEvalRuns).toHaveBeenCalledWith(1);
   });
 
   it('returns one eval run by id', async () => {
@@ -104,7 +93,9 @@ describe('EvalsController', () => {
       evalsService as unknown as EvalsService,
     );
 
-    await expect(controller.getEvalRun('eval_run_1')).resolves.toMatchObject({
+    await expect(
+      controller.getEvalRun({ id: 'eval_run_1' }),
+    ).resolves.toMatchObject({
       id: 'eval_run_1',
       name: 'baseline',
       datasetPath: '/repo/datasets/evals/baseline.json',
@@ -126,9 +117,9 @@ describe('EvalsController', () => {
       evalsService as unknown as EvalsService,
     );
 
-    await expect(controller.getEvalRun('missing')).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
+    await expect(
+      controller.getEvalRun({ id: 'missing' }),
+    ).rejects.toBeInstanceOf(NotFoundException);
   });
 
   it('returns the persisted eval run id from baseline runs', async () => {

@@ -13,7 +13,7 @@ describe('QueryLogsController', () => {
     queryLogsService.findRagQueryLogById.mockReset();
   });
 
-  it('returns recent query logs with a clamped limit', async () => {
+  it('returns recent query logs with a validated limit', async () => {
     const createdAt = new Date('2026-06-10T00:00:00.000Z');
     queryLogsService.listRecentRagQueryLogs.mockResolvedValue([
       {
@@ -46,7 +46,7 @@ describe('QueryLogsController', () => {
       queryLogsService as unknown as QueryLogsService,
     );
 
-    await expect(controller.listQueryLogs('999')).resolves.toEqual([
+    await expect(controller.listQueryLogs({ limit: 50 })).resolves.toEqual([
       {
         id: 'query_1',
         question: 'How do I update billing email?',
@@ -79,7 +79,7 @@ describe('QueryLogsController', () => {
       queryLogsService as unknown as QueryLogsService,
     );
 
-    await expect(controller.listQueryLogs('not-a-number')).resolves.toEqual([]);
+    await expect(controller.listQueryLogs({})).resolves.toEqual([]);
 
     expect(queryLogsService.listRecentRagQueryLogs).toHaveBeenCalledWith(20);
   });
@@ -90,7 +90,7 @@ describe('QueryLogsController', () => {
       queryLogsService as unknown as QueryLogsService,
     );
 
-    await expect(controller.listQueryLogs(undefined)).resolves.toEqual([]);
+    await expect(controller.listQueryLogs({})).resolves.toEqual([]);
 
     expect(queryLogsService.listRecentRagQueryLogs).toHaveBeenCalledWith(20);
   });
@@ -113,7 +113,7 @@ describe('QueryLogsController', () => {
       queryLogsService as unknown as QueryLogsService,
     );
 
-    await expect(controller.getQueryLog('query_1')).resolves.toEqual({
+    await expect(controller.getQueryLog({ id: 'query_1' })).resolves.toEqual({
       id: 'query_1',
       question: 'How do I update billing email?',
       answer: 'Use account settings.',
@@ -136,8 +136,8 @@ describe('QueryLogsController', () => {
       queryLogsService as unknown as QueryLogsService,
     );
 
-    await expect(controller.getQueryLog('missing')).rejects.toBeInstanceOf(
-      NotFoundException,
-    );
+    await expect(
+      controller.getQueryLog({ id: 'missing' }),
+    ).rejects.toBeInstanceOf(NotFoundException);
   });
 });
