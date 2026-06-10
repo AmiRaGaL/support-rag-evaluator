@@ -2,12 +2,22 @@ import { PrismaService } from '../prisma/prisma.service';
 import { QueryLogsService } from './query-logs.service';
 
 describe('QueryLogsService', () => {
+  const prisma = {
+    ragQuery: {
+      create: jest.fn(),
+      findMany: jest.fn(),
+      findUnique: jest.fn(),
+    },
+  };
+
+  beforeEach(() => {
+    prisma.ragQuery.create.mockReset();
+    prisma.ragQuery.findMany.mockReset();
+    prisma.ragQuery.findUnique.mockReset();
+  });
+
   it('creates a RAG query log with retrieved chunk metadata', async () => {
-    const prisma = {
-      ragQuery: {
-        create: jest.fn().mockResolvedValue({ id: 'query_1' }),
-      },
-    };
+    prisma.ragQuery.create.mockResolvedValue({ id: 'query_1' });
     const service = new QueryLogsService(prisma as unknown as PrismaService);
 
     await expect(
@@ -54,6 +64,51 @@ describe('QueryLogsService', () => {
               citationUsed: true,
             },
           ],
+        },
+      },
+    });
+  });
+
+  it('lists recent RAG query logs in descending creation order', async () => {
+    prisma.ragQuery.findMany.mockResolvedValue([{ id: 'query_2' }]);
+    const service = new QueryLogsService(prisma as unknown as PrismaService);
+
+    await expect(service.listRecentRagQueryLogs(10)).resolves.toEqual([
+      { id: 'query_2' },
+    ]);
+
+    expect(prisma.ragQuery.findMany).toHaveBeenCalledWith({
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 10,
+      include: {
+        retrievedChunks: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+      },
+    });
+  });
+
+  it('finds one RAG query log with retrieved chunks by id', async () => {
+    prisma.ragQuery.findUnique.mockResolvedValue({ id: 'query_1' });
+    const service = new QueryLogsService(prisma as unknown as PrismaService);
+
+    await expect(service.findRagQueryLogById('query_1')).resolves.toEqual({
+      id: 'query_1',
+    });
+
+    expect(prisma.ragQuery.findUnique).toHaveBeenCalledWith({
+      where: {
+        id: 'query_1',
+      },
+      include: {
+        retrievedChunks: {
+          orderBy: {
+            createdAt: 'asc',
+          },
         },
       },
     });
