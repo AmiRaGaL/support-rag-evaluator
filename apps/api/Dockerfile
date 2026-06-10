@@ -20,6 +20,15 @@ COPY src ./src
 
 RUN DATABASE_URL="postgresql://user:password@localhost:5432/support_rag_build?schema=public" npx prisma generate
 RUN npm run build
+
+FROM build AS migrate
+
+ENV NODE_ENV=production
+
+CMD ["npm", "run", "prisma:migrate:deploy"]
+
+FROM build AS production-deps
+
 RUN npm prune --omit=dev && npm cache clean --force
 
 FROM base AS runtime
@@ -27,9 +36,9 @@ FROM base AS runtime
 ENV NODE_ENV=production
 
 COPY package.json package-lock.json ./
-COPY --from=build /app/node_modules ./node_modules
+COPY --from=production-deps /app/node_modules ./node_modules
 COPY --from=build /app/dist ./dist
-COPY --from=build /app/prisma/schema.prisma ./prisma/schema.prisma
+COPY --from=build /app/prisma ./prisma
 
 USER node
 

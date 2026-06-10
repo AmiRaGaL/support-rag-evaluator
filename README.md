@@ -44,6 +44,16 @@ cd apps/api
 npx prisma migrate dev
 ```
 
+For the Dockerized API workflow, run production migrations explicitly:
+
+```bash
+docker compose --profile tools run --rm api-migrate
+```
+
+This waits for the Compose Postgres health check and runs `prisma migrate
+deploy` against `postgres:5432` inside the Docker network. Migrations are not
+run automatically when the API container starts.
+
 The Phase 2 migration enables pgvector with
 `CREATE EXTENSION IF NOT EXISTS vector`, creates `Document` and
 `DocumentChunk`, and stores optional embeddings as a nullable `vector(1536)`
