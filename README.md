@@ -154,7 +154,7 @@ curl -X POST http://localhost:3001/retrieval/search \
 
 The `/chat` endpoint performs retrieval and then builds a deterministic,
 grounded answer from retrieved chunks. It does not call an external LLM and
-does not require API keys.
+does not require API keys unless `LLM_PROVIDER=groq` is configured.
 
 Before chatting, ingest documents and embed chunks:
 
@@ -211,6 +211,22 @@ curl -X POST http://localhost:3001/chat \
   "retrievedChunkCount": 3
 }
 ```
+
+### Optional Groq LLM provider
+
+By default, chat uses the deterministic offline provider so tests and CI do not
+need external API keys. To use Groq for OpenAI-compatible chat completions,
+configure the API environment:
+
+```bash
+LLM_PROVIDER=groq
+GROQ_API_KEY="gsk_..."
+GROQ_CHAT_MODEL="llama-3.1-8b-instant"
+```
+
+`GROQ_BASE_URL` defaults to `https://api.groq.com/openai/v1`. Groq is only
+constructed when `LLM_PROVIDER=groq`; leaving `LLM_PROVIDER` unset, or setting
+it to `deterministic`, keeps the API fully offline after retrieval.
 
 ### Local baseline eval runner
 

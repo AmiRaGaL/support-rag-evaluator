@@ -1,20 +1,23 @@
 import { Injectable } from '@nestjs/common';
+import { LlmService } from '../llm/llm.service';
 import { RetrievalService } from '../retrieval/retrieval.service';
-import { GroundedAnswerService } from './grounded-answer.service';
 import type { ChatRequest, ChatResponse } from './chat.types';
 
 @Injectable()
 export class ChatService {
   constructor(
     private readonly retrievalService: RetrievalService,
-    private readonly groundedAnswerService: GroundedAnswerService,
+    private readonly llmService: LlmService,
   ) {}
 
   async answerQuestion(input: ChatRequest): Promise<ChatResponse> {
     const question = input.question.trim();
 
     if (!question) {
-      return this.groundedAnswerService.buildAnswer(question, []);
+      return this.llmService.generateGroundedAnswer({
+        question,
+        chunks: [],
+      });
     }
 
     const retrievalResult = await this.retrievalService.searchChunks({
@@ -22,9 +25,9 @@ export class ChatService {
       limit: input.limit,
     });
 
-    return this.groundedAnswerService.buildAnswer(
+    return this.llmService.generateGroundedAnswer({
       question,
-      retrievalResult.chunks,
-    );
+      chunks: retrievalResult.chunks,
+    });
   }
 }
