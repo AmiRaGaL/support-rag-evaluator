@@ -32,12 +32,31 @@ export interface ChatCitation {
   snippet: string;
 }
 
-export interface ChatAnswerResponse {
-  status: "answered";
+export interface ChatRetrievedChunk {
+  id?: string;
+  chunkId?: string;
+  documentId: string;
+  documentTitle: string;
+  sourceKey: string;
+  chunkIndex: number;
+  content?: string;
+  snippet?: string;
+  score?: number;
+  similarity?: number;
+}
+
+interface ChatResponseMetadata {
   question: string;
   answer: string;
   citations: ChatCitation[];
+  confidence?: number | null;
+  refusal?: boolean;
+  retrievedChunks?: ChatRetrievedChunk[];
   retrievedChunkCount: number;
+}
+
+export interface ChatAnswerResponse extends ChatResponseMetadata {
+  status: "answered";
 }
 
 export interface ChatRefusalResponse {
@@ -45,11 +64,22 @@ export interface ChatRefusalResponse {
   question: string;
   answer: string;
   citations: [];
-  refusalReason: ChatRefusalReason;
+  confidence?: number | null;
+  refusal?: boolean;
+  retrievedChunks?: ChatRetrievedChunk[];
   retrievedChunkCount: number;
+  refusalReason: ChatRefusalReason;
 }
 
-export type ChatResponse = ChatAnswerResponse | ChatRefusalResponse;
+export interface LegacyChatRefusalResponse extends ChatResponseMetadata {
+  status: "refused";
+  refusalReason: ChatRefusalReason;
+}
+
+export type ChatResponse =
+  | ChatAnswerResponse
+  | ChatRefusalResponse
+  | LegacyChatRefusalResponse;
 
 export interface QueryLogRetrievedChunk {
   chunkId: string;
