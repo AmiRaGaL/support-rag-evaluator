@@ -1,3 +1,4 @@
+import { InternalServerErrorException } from '@nestjs/common';
 import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import * as path from 'path';
@@ -10,6 +11,7 @@ import type { BaselineEvalCase } from './eval.types';
 import {
   EvalsService,
   parseBaselineEvalCases,
+  readBaselineEvalCases,
   resolveBaselineEvalDatasetPath,
 } from './evals.service';
 
@@ -115,16 +117,7 @@ describe('EvalsService', () => {
       llmService as unknown as LlmService,
     );
 
-    jest
-      .spyOn(
-        service as unknown as {
-          readBaselineCases: (
-            datasetPath: string,
-          ) => Promise<BaselineEvalCase[]>;
-        },
-        'readBaselineCases',
-      )
-      .mockResolvedValue(evalCases);
+    jest.spyOn(service, 'readBaselineCases').mockResolvedValue(evalCases);
 
     const result = await service.runBaseline();
 
@@ -197,6 +190,32 @@ describe('EvalsService', () => {
       },
     });
     expect(llmService.getProviderName).toHaveBeenCalledTimes(1);
+  });
+
+  it('throws a clear setup error when the baseline dataset file is missing', async () => {
+    const datasetPath = path.join(
+      tmpdir(),
+      'support-rag-missing-baseline.json',
+    );
+
+    await expect(readBaselineEvalCases(datasetPath)).rejects.toThrow(
+      InternalServerErrorException,
+    );
+    await expect(readBaselineEvalCases(datasetPath)).rejects.toThrow(
+      `Baseline eval dataset is missing or unreadable at ${datasetPath} (ENOENT).`,
+    );
+  });
+
+  it('throws a clear setup error when the baseline dataset JSON is malformed', async () => {
+    const tempDirectory = mkdtempSync(path.join(tmpdir(), 'eval-runner-'));
+    const datasetPath = path.join(tempDirectory, 'baseline.json');
+    writeFileSync(datasetPath, '{ invalid json', 'utf8');
+    await expect(readBaselineEvalCases(datasetPath)).rejects.toThrow(
+      InternalServerErrorException,
+    );
+    await expect(readBaselineEvalCases(datasetPath)).rejects.toThrow(
+      `Baseline eval dataset contains malformed JSON at ${datasetPath}.`,
+    );
   });
 
   it('lists recent persisted eval runs in descending creation order', async () => {

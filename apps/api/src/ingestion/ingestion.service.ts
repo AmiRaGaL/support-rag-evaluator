@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, InternalServerErrorException } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { existsSync, type Dirent } from 'fs';
 import { promises as fs } from 'fs';
@@ -38,12 +38,18 @@ export class IngestionService {
       .map((entry) => entry.name)
       .sort();
 
+    if (markdownFiles.length === 0) {
+      throw new InternalServerErrorException(
+        `Markdown directory contains no sample documents: ${directoryPath}`,
+      );
+    }
+
     const documents: IngestMarkdownDirectoryResult['documents'] = [];
     let chunksCreated = 0;
 
     for (const fileName of markdownFiles) {
       const filePath = path.join(directoryPath, fileName);
-      const content = await fs.readFile(filePath, 'utf8');
+      const content = await this.readMarkdownFile(filePath);
       const title = extractMarkdownTitle(content) ?? fileName;
       const sourceKey = path.basename(fileName, '.md');
       const contentHash = createHash('sha256').update(content).digest('hex');
@@ -91,8 +97,20 @@ export class IngestionService {
     } catch (error: unknown) {
       const errorCode = isFileSystemError(error) ? ` (${error.code})` : '';
 
-      throw new NotFoundException(
-        `Markdown directory not found or cannot be read: ${directoryPath}${errorCode}`,
+      throw new InternalServerErrorException(
+        `Sample docs directory is missing or unreadable: ${directoryPath}${errorCode}.`,
+      );
+    }
+  }
+
+  private async readMarkdownFile(filePath: string): Promise<string> {
+    try {
+      return await fs.readFile(filePath, 'utf8');
+    } catch (error: unknown) {
+      const errorCode = isFileSystemError(error) ? ` (${error.code})` : '';
+
+      throw new InternalServerErrorException(
+        `Sample doc file is missing or unreadable: ${filePath}${errorCode}.`,
       );
     }
   }

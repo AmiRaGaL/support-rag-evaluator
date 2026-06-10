@@ -120,6 +120,10 @@ export class EvalsService {
     });
   }
 
+  async readBaselineCases(datasetPath: string): Promise<BaselineEvalCase[]> {
+    return readBaselineEvalCases(datasetPath);
+  }
+
   private async persistEvalRun(input: {
     datasetPath: string;
     metrics: EvalAggregateMetrics;
@@ -177,26 +181,6 @@ export class EvalsService {
     );
   }
 
-  private async readBaselineCases(
-    datasetPath: string,
-  ): Promise<BaselineEvalCase[]> {
-    let parsedJson: unknown;
-
-    try {
-      const content = await fs.readFile(datasetPath, 'utf8');
-      parsedJson = JSON.parse(content) as unknown;
-    } catch (error: unknown) {
-      const message =
-        error instanceof Error ? error.message : 'Unknown filesystem error';
-
-      throw new InternalServerErrorException(
-        `Unable to read baseline eval dataset at ${datasetPath}: ${message}`,
-      );
-    }
-
-    return parseBaselineEvalCases(parsedJson);
-  }
-
   private calculateMetrics(results: EvalCaseResult[]): EvalAggregateMetrics {
     const totalCases = results.length;
 
@@ -234,6 +218,34 @@ export class EvalsService {
       overallAccuracy: fullyCorrectCount / totalCases,
     };
   }
+}
+
+export async function readBaselineEvalCases(
+  datasetPath: string,
+): Promise<BaselineEvalCase[]> {
+  let content: string;
+
+  try {
+    content = await fs.readFile(datasetPath, 'utf8');
+  } catch (error: unknown) {
+    const errorCode = isFileSystemError(error) ? ` (${error.code})` : '';
+
+    throw new InternalServerErrorException(
+      `Baseline eval dataset is missing or unreadable at ${datasetPath}${errorCode}.`,
+    );
+  }
+
+  let parsedJson: unknown;
+
+  try {
+    parsedJson = JSON.parse(content) as unknown;
+  } catch {
+    throw new InternalServerErrorException(
+      `Baseline eval dataset contains malformed JSON at ${datasetPath}.`,
+    );
+  }
+
+  return parseBaselineEvalCases(parsedJson);
 }
 
 export function resolveBaselineEvalDatasetPath(
@@ -398,4 +410,13 @@ function uniquePaths(paths: string[]): string[] {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+function isFileSystemError(error: unknown): error is NodeJS.ErrnoException {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    typeof error.code === 'string'
+  );
 }
