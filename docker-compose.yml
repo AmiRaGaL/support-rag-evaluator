@@ -1,4 +1,36 @@
 services:
+  api:
+    build:
+      context: ./apps/api
+      target: runtime
+    container_name: support-rag-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://support_rag_user:support_rag_password@postgres:5432/support_rag_dev?schema=public
+      NODE_ENV: production
+      PORT: 3001
+      LLM_PROVIDER: deterministic
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  api-migrate:
+    build:
+      context: ./apps/api
+      target: migrate
+    profiles:
+      - tools
+    environment:
+      DATABASE_URL: postgresql://support_rag_user:support_rag_password@postgres:5432/support_rag_dev?schema=public
+      NODE_ENV: production
+      LLM_PROVIDER: deterministic
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: npm run prisma:migrate:deploy
+
   postgres:
     image: pgvector/pgvector:pg16
     container_name: support-rag-postgres

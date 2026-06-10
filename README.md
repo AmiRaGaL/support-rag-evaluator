@@ -23,11 +23,12 @@ Early scaffold. Building in small, reviewable commits.
 ### Start local services
 
 ```bash
-docker compose up -d
+docker compose up -d postgres
 ```
 
 Docker Compose starts PostgreSQL with pgvector using the `pgvector/pgvector:pg16`
-image. The database is exposed on `localhost:5433`.
+image. The database is exposed on `localhost:5433` to avoid conflicts with
+other local PostgreSQL containers.
 
 For local API development, create `apps/api/.env` with:
 
@@ -37,12 +38,65 @@ DATABASE_URL="postgresql://support_rag_user:support_rag_password@localhost:5433/
 
 Do not commit local `.env` files.
 
+### Dockerized API runtime
+
+The API can also run through Docker Compose. The API is exposed on
+`localhost:3001`, and it connects to Postgres inside the Docker network at
+`postgres:5432`.
+
+Build and start the services:
+
+```bash
+docker compose up --build -d
+```
+
+Run Prisma migrations explicitly:
+
+```bash
+docker compose --profile tools run --rm api-migrate
+```
+
+Migrations are not run automatically when the API container starts. By default,
+the Compose API service uses `LLM_PROVIDER=deterministic`, which does not
+require API keys. To try Groq locally, set `LLM_PROVIDER=groq` and
+`GROQ_API_KEY` for the API environment.
+
+Check the API health endpoint:
+
+```bash
+curl http://localhost:3001/health
+```
+
+Typical Dockerized local flow:
+
+```bash
+docker compose up --build -d
+docker compose --profile tools run --rm api-migrate
+curl -X POST http://localhost:3001/ingestion/sample-docs
+curl -X POST http://localhost:3001/retrieval/embed-missing
+curl -X POST http://localhost:3001/chat \
+  -H "Content-Type: application/json" \
+  -d '{"question":"Can I export billing history?","limit":5}'
+curl "http://localhost:3001/query-logs?limit=10"
+curl -X POST http://localhost:3001/evals/run-baseline
+```
+
 ### Apply database migrations
 
 ```bash
 cd apps/api
 npx prisma migrate dev
 ```
+
+For the Dockerized API workflow, run production migrations explicitly:
+
+```bash
+docker compose --profile tools run --rm api-migrate
+```
+
+This waits for the Compose Postgres health check and runs `prisma migrate
+deploy` against `postgres:5432` inside the Docker network. Migrations are not
+run automatically when the API container starts.
 
 The Phase 2 migration enables pgvector with
 `CREATE EXTENSION IF NOT EXISTS vector`, creates `Document` and
