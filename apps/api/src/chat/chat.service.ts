@@ -4,6 +4,11 @@ import { QueryLogsService } from '../query-logs/query-logs.service';
 import { RetrievalService } from '../retrieval/retrieval.service';
 import type { ChatRequest, ChatResponse } from './chat.types';
 
+export interface ChatResponseWithMetadata {
+  response: ChatResponse;
+  confidence: number;
+}
+
 @Injectable()
 export class ChatService {
   private readonly logger = new Logger(ChatService.name);
@@ -15,6 +20,14 @@ export class ChatService {
   ) {}
 
   async answerQuestion(input: ChatRequest): Promise<ChatResponse> {
+    const result = await this.answerQuestionWithMetadata(input);
+
+    return result.response;
+  }
+
+  async answerQuestionWithMetadata(
+    input: ChatRequest,
+  ): Promise<ChatResponseWithMetadata> {
     const startedAt = Date.now();
     const question = input.question.trim();
 
@@ -32,7 +45,7 @@ export class ChatService {
         latencyMs: Date.now() - startedAt,
       });
 
-      return result.response;
+      return result;
     }
 
     const retrievalResult = await this.retrievalService.searchChunks({
@@ -53,7 +66,7 @@ export class ChatService {
       latencyMs: Date.now() - startedAt,
     });
 
-    return result.response;
+    return result;
   }
 
   private async logQuery(input: {

@@ -23,6 +23,7 @@ export interface EvalCaseResult {
   expectedAnswer: string;
   expectedSources: string[];
   response: ChatResponse;
+  actualConfidence: number;
   score: EvalScore;
 }
 
@@ -35,6 +36,7 @@ export interface EvalAggregateMetrics {
 }
 
 export interface BaselineEvalRunResult {
+  evalRunId: string;
   dataset: string;
   metrics: EvalAggregateMetrics;
   results: EvalCaseResult[];
