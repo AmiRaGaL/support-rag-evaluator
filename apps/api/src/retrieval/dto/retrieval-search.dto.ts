@@ -1,3 +1,4 @@
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
 import {
   IsInt,
@@ -9,6 +10,10 @@ import {
 } from 'class-validator';
 
 export class RetrievalSearchBodyDto {
+  @ApiProperty({
+    description: 'Natural-language search query for support documentation.',
+    example: 'reset two-factor authentication',
+  })
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )
@@ -16,6 +21,12 @@ export class RetrievalSearchBodyDto {
   @IsNotEmpty()
   query!: string;
 
+  @ApiPropertyOptional({
+    description: 'Maximum number of chunks to return.',
+    minimum: 1,
+    maximum: 20,
+    example: 5,
+  })
   @ValidateIf((_, value: unknown) => value !== undefined)
   @Type(() => Number)
   @IsInt()
@@ -25,6 +36,10 @@ export class RetrievalSearchBodyDto {
 }
 
 export class RetrievalSearchQueryDto {
+  @ApiProperty({
+    description: 'Natural-language search query for support documentation.',
+    example: 'change invoice email',
+  })
   @Transform(({ value }: { value: unknown }) =>
     typeof value === 'string' ? value.trim() : value,
   )
@@ -32,6 +47,12 @@ export class RetrievalSearchQueryDto {
   @IsNotEmpty()
   q!: string;
 
+  @ApiPropertyOptional({
+    description: 'Maximum number of chunks to return.',
+    minimum: 1,
+    maximum: 20,
+    example: 5,
+  })
   @ValidateIf((_, value: unknown) => value !== undefined)
   @Type(() => Number)
   @IsInt()
