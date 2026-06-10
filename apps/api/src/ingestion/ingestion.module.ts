@@ -7,5 +7,6 @@ import { IngestionService } from './ingestion.service';
   imports: [DocumentsModule],
   controllers: [IngestionController],
   providers: [IngestionService],
+  exports: [IngestionService],
 })
 export class IngestionModule {}

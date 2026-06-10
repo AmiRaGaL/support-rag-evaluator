@@ -81,21 +81,25 @@ export class RetrievalService {
     const queryVector = this.toVectorLiteral(queryEmbedding);
 
     const rows = await this.prisma.$queryRaw<unknown[]>`
-      SELECT
-        c."id",
-        c."documentId",
-        d."title" AS "documentTitle",
-        d."sourceKey",
-        d."sourcePath",
-        c."chunkIndex",
-        c."content",
-        c."tokenCount",
-        c."metadata",
-        c."embedding" <=> ${queryVector}::vector AS "distance"
-      FROM "DocumentChunk" c
-      INNER JOIN "Document" d ON d."id" = c."documentId"
-      WHERE c."embedding" IS NOT NULL
-      ORDER BY c."embedding" <=> ${queryVector}::vector ASC
+      WITH scored_chunks AS (
+        SELECT
+          c."id",
+          c."documentId",
+          d."title" AS "documentTitle",
+          d."sourceKey",
+          d."sourcePath",
+          c."chunkIndex",
+          c."content",
+          c."tokenCount",
+          c."metadata",
+          ((c."embedding" <=> ${queryVector}::vector)::text)::float8 AS "distance"
+        FROM "DocumentChunk" c
+        INNER JOIN "Document" d ON d."id" = c."documentId"
+        WHERE c."embedding" IS NOT NULL
+      )
+      SELECT *
+      FROM scored_chunks
+      ORDER BY "distance" ASC
       LIMIT ${limit}
     `;
     const chunks = this.parseSearchRows(rows);

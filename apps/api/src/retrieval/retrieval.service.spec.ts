@@ -107,8 +107,7 @@ describe('RetrievalService', () => {
       ],
     });
     expect(mockArg(prisma.$queryRaw, 0, 1)).toBe(`[${unitVector().join(',')}]`);
-    expect(mockArg(prisma.$queryRaw, 0, 2)).toBe(`[${unitVector().join(',')}]`);
-    expect(mockArg(prisma.$queryRaw, 0, 3)).toBe(50);
+    expect(mockArg(prisma.$queryRaw, 0, 2)).toBe(50);
   });
 
   it('does not query vector search for blank queries', async () => {
