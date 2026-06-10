@@ -6,18 +6,33 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import {
+  ApiCreatedResponse,
+  ApiNotFoundResponse,
+  ApiOkResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { IdParamDto } from '../common/dto/id-param.dto';
 import { DEFAULT_LIST_LIMIT, ListQueryDto } from '../common/dto/list-query.dto';
+import {
+  BaselineEvalRunResponseDto,
+  EvalRunResponseDto,
+} from './dto/eval-response.dto';
 import {
   EvalsService,
   type PersistedEvalRunWithCaseResults,
 } from './evals.service';
 
+@ApiTags('evals')
 @Controller('evals')
 export class EvalsController {
   constructor(private readonly evalsService: EvalsService) {}
 
   @Get('runs')
+  @ApiOkResponse({
+    description: 'Recent eval runs ordered newest first.',
+    type: [EvalRunResponseDto],
+  })
   async listEvalRuns(@Query() query: ListQueryDto) {
     const runs = await this.evalsService.listRecentEvalRuns(
       query.limit ?? DEFAULT_LIST_LIMIT,
@@ -27,6 +42,13 @@ export class EvalsController {
   }
 
   @Get('runs/:id')
+  @ApiOkResponse({
+    description: 'Eval run detail with per-case results.',
+    type: EvalRunResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'No eval run exists for the supplied id.',
+  })
   async getEvalRun(@Param() params: IdParamDto) {
     const run = await this.evalsService.findEvalRunById(params.id);
 
@@ -38,6 +60,10 @@ export class EvalsController {
   }
 
   @Post('run-baseline')
+  @ApiCreatedResponse({
+    description: 'Runs the baseline eval dataset and persists the result.',
+    type: BaselineEvalRunResponseDto,
+  })
   runBaseline() {
     return this.evalsService.runBaseline();
   }

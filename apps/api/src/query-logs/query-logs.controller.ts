@@ -5,18 +5,25 @@ import {
   Param,
   Query,
 } from '@nestjs/common';
+import { ApiNotFoundResponse, ApiOkResponse, ApiTags } from '@nestjs/swagger';
 import { IdParamDto } from '../common/dto/id-param.dto';
 import { DEFAULT_LIST_LIMIT, ListQueryDto } from '../common/dto/list-query.dto';
 import {
   QueryLogsService,
   type QueryLogWithRetrievedChunks,
 } from './query-logs.service';
+import { QueryLogResponseDto } from './dto/query-log-response.dto';
 
+@ApiTags('query logs')
 @Controller('query-logs')
 export class QueryLogsController {
   constructor(private readonly queryLogsService: QueryLogsService) {}
 
   @Get()
+  @ApiOkResponse({
+    description: 'Recent RAG query logs ordered newest first.',
+    type: [QueryLogResponseDto],
+  })
   async listQueryLogs(@Query() query: ListQueryDto) {
     const logs = await this.queryLogsService.listRecentRagQueryLogs(
       query.limit ?? DEFAULT_LIST_LIMIT,
@@ -26,6 +33,13 @@ export class QueryLogsController {
   }
 
   @Get(':id')
+  @ApiOkResponse({
+    description: 'RAG query log detail.',
+    type: QueryLogResponseDto,
+  })
+  @ApiNotFoundResponse({
+    description: 'No query log exists for the supplied id.',
+  })
   async getQueryLog(@Param() params: IdParamDto) {
     const log = await this.queryLogsService.findRagQueryLogById(params.id);
 
