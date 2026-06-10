@@ -1,4 +1,20 @@
 services:
+  api:
+    build:
+      context: ./apps/api
+    container_name: support-rag-api
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://support_rag_user:support_rag_password@postgres:5432/support_rag_dev?schema=public
+      NODE_ENV: production
+      PORT: 3001
+      LLM_PROVIDER: deterministic
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
   postgres:
     image: pgvector/pgvector:pg16
     container_name: support-rag-postgres
