@@ -8,5 +8,6 @@ import { RetrievalService } from './retrieval.service';
   imports: [EmbeddingsModule, PrismaModule],
   controllers: [RetrievalController],
   providers: [RetrievalService],
+  exports: [RetrievalService],
 })
 export class RetrievalModule {}
