@@ -266,6 +266,34 @@ curl -X POST http://localhost:3001/chat \
 }
 ```
 
+### API validation and errors
+
+Request bodies and query params are validated with NestJS validation pipes.
+Unknown request fields may be rejected, and validation failures return `400`
+responses without stack traces, secrets, or environment values.
+
+Common validation rules:
+
+- `POST /chat` requires a non-empty string `question`.
+- `limit` values must be integers within safe endpoint-specific bounds.
+- Search requests require a non-empty `query` body field or `q` query param.
+
+Invalid `/chat` request:
+
+```bash
+curl -X POST http://localhost:3001/chat \
+  -H "Content-Type: application/json" \
+  -d '{"limit":999}'
+```
+
+Valid `/chat` request:
+
+```bash
+curl -X POST http://localhost:3001/chat \
+  -H "Content-Type: application/json" \
+  -d '{"question":"Can I export billing history?","limit":5}'
+```
+
 ### Query logging / observability
 
 Every `/chat` request is logged for local inspection and eval debugging. Query

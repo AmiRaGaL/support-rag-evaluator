@@ -5,54 +5,35 @@ import {
   Param,
   Query,
 } from '@nestjs/common';
+import { IdParamDto } from '../common/dto/id-param.dto';
+import { DEFAULT_LIST_LIMIT, ListQueryDto } from '../common/dto/list-query.dto';
 import {
   QueryLogsService,
   type QueryLogWithRetrievedChunks,
 } from './query-logs.service';
-
-const DEFAULT_QUERY_LOG_LIMIT = 20;
-const MIN_QUERY_LOG_LIMIT = 1;
-const MAX_QUERY_LOG_LIMIT = 50;
 
 @Controller('query-logs')
 export class QueryLogsController {
   constructor(private readonly queryLogsService: QueryLogsService) {}
 
   @Get()
-  async listQueryLogs(@Query('limit') limit: unknown) {
+  async listQueryLogs(@Query() query: ListQueryDto) {
     const logs = await this.queryLogsService.listRecentRagQueryLogs(
-      this.normalizeLimit(limit),
+      query.limit ?? DEFAULT_LIST_LIMIT,
     );
 
     return logs.map((log) => this.toResponse(log));
   }
 
   @Get(':id')
-  async getQueryLog(@Param('id') id: string) {
-    const log = await this.queryLogsService.findRagQueryLogById(id);
+  async getQueryLog(@Param() params: IdParamDto) {
+    const log = await this.queryLogsService.findRagQueryLogById(params.id);
 
     if (!log) {
-      throw new NotFoundException(`Query log ${id} was not found.`);
+      throw new NotFoundException(`Query log ${params.id} was not found.`);
     }
 
     return this.toResponse(log);
-  }
-
-  private normalizeLimit(limit: unknown): number {
-    if (typeof limit !== 'string') {
-      return DEFAULT_QUERY_LOG_LIMIT;
-    }
-
-    const parsed = Number(limit);
-
-    if (!Number.isFinite(parsed)) {
-      return DEFAULT_QUERY_LOG_LIMIT;
-    }
-
-    return Math.min(
-      Math.max(Math.trunc(parsed), MIN_QUERY_LOG_LIMIT),
-      MAX_QUERY_LOG_LIMIT,
-    );
   }
 
   private toResponse(log: QueryLogWithRetrievedChunks) {

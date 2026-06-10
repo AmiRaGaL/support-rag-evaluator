@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { InternalServerErrorException } from '@nestjs/common';
 import { createHash } from 'crypto';
 import { promises as fs } from 'fs';
 import { tmpdir } from 'os';
@@ -147,11 +147,30 @@ describe('IngestionService', () => {
 
     await expect(
       service.ingestMarkdownDirectory(missingDirectory),
-    ).rejects.toThrow(NotFoundException);
+    ).rejects.toThrow(InternalServerErrorException);
     await expect(
       service.ingestMarkdownDirectory(missingDirectory),
     ).rejects.toThrow(
-      `Markdown directory not found or cannot be read: ${missingDirectory} (ENOENT)`,
+      `Sample docs directory is missing or unreadable: ${missingDirectory} (ENOENT).`,
+    );
+    expect(documentsService.upsertDocumentWithChunks).not.toHaveBeenCalled();
+  });
+
+  it('throws a clear error when the markdown directory contains no docs', async () => {
+    const directoryPath = await fs.mkdtemp(
+      path.join(tmpdir(), 'support-rag-empty-docs-'),
+    );
+    temporaryDirectories.push(directoryPath);
+    await fs.writeFile(path.join(directoryPath, 'ignored.txt'), '', 'utf8');
+    const service = new IngestionService(documentsService as DocumentsService);
+
+    await expect(
+      service.ingestMarkdownDirectory(directoryPath),
+    ).rejects.toThrow(InternalServerErrorException);
+    await expect(
+      service.ingestMarkdownDirectory(directoryPath),
+    ).rejects.toThrow(
+      `Markdown directory contains no sample documents: ${directoryPath}`,
     );
     expect(documentsService.upsertDocumentWithChunks).not.toHaveBeenCalled();
   });

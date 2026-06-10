@@ -6,34 +6,32 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { IdParamDto } from '../common/dto/id-param.dto';
+import { DEFAULT_LIST_LIMIT, ListQueryDto } from '../common/dto/list-query.dto';
 import {
   EvalsService,
   type PersistedEvalRunWithCaseResults,
 } from './evals.service';
-
-const DEFAULT_EVAL_RUN_LIMIT = 20;
-const MIN_EVAL_RUN_LIMIT = 1;
-const MAX_EVAL_RUN_LIMIT = 50;
 
 @Controller('evals')
 export class EvalsController {
   constructor(private readonly evalsService: EvalsService) {}
 
   @Get('runs')
-  async listEvalRuns(@Query('limit') limit: unknown) {
+  async listEvalRuns(@Query() query: ListQueryDto) {
     const runs = await this.evalsService.listRecentEvalRuns(
-      this.normalizeLimit(limit),
+      query.limit ?? DEFAULT_LIST_LIMIT,
     );
 
     return runs.map((run) => this.toResponse(run));
   }
 
   @Get('runs/:id')
-  async getEvalRun(@Param('id') id: string) {
-    const run = await this.evalsService.findEvalRunById(id);
+  async getEvalRun(@Param() params: IdParamDto) {
+    const run = await this.evalsService.findEvalRunById(params.id);
 
     if (!run) {
-      throw new NotFoundException(`Eval run ${id} was not found.`);
+      throw new NotFoundException(`Eval run ${params.id} was not found.`);
     }
 
     return this.toResponse(run);
@@ -42,23 +40,6 @@ export class EvalsController {
   @Post('run-baseline')
   runBaseline() {
     return this.evalsService.runBaseline();
-  }
-
-  private normalizeLimit(limit: unknown): number {
-    if (typeof limit !== 'string') {
-      return DEFAULT_EVAL_RUN_LIMIT;
-    }
-
-    const parsed = Number(limit);
-
-    if (!Number.isFinite(parsed)) {
-      return DEFAULT_EVAL_RUN_LIMIT;
-    }
-
-    return Math.min(
-      Math.max(Math.trunc(parsed), MIN_EVAL_RUN_LIMIT),
-      MAX_EVAL_RUN_LIMIT,
-    );
   }
 
   private toResponse(run: PersistedEvalRunWithCaseResults) {
