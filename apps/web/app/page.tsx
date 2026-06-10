@@ -1,11 +1,12 @@
-const apiBaseUrl =
-  process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ??
-  "http://localhost:3001";
+import Link from "next/link";
+import { apiBaseUrl, getHealth, type HealthResponse } from "@/lib/api-client";
 
-const dashboardLinks = [
+export const dynamic = "force-dynamic";
+
+const dashboardSections = [
   {
     title: "Chat",
-    description: "Grounded support responses with citations.",
+    description: "Ask support questions and review grounded answers with citations.",
     href: "/chat",
   },
   {
@@ -18,18 +19,49 @@ const dashboardLinks = [
     description: "Offline checks for retrieval, answers, citations, and refusals.",
     href: "/eval-runs",
   },
+  {
+    title: "API Docs",
+    description: "OpenAPI documentation for the local support RAG service.",
+    href: `${apiBaseUrl}/docs`,
+    external: true,
+  },
 ];
 
-export default function Home() {
+type HealthState =
+  | { connected: true; data: HealthResponse }
+  | { connected: false; message: string };
+
+export default async function Home() {
+  const health = await loadHealth();
+
   return (
     <div className="home">
       <section className="intro">
-        <p className="eyebrow">Dashboard scaffold</p>
+        <p className="eyebrow">Overview dashboard</p>
         <h1>Support RAG Evaluator</h1>
         <p className="lede">Eval-driven RAG support assistant</p>
       </section>
 
-      <section className="status-strip" aria-label="Project focus">
+      <section className="health-panel" aria-label="API health">
+        <div>
+          <p className="eyebrow">API health</p>
+          <h2>{health.connected ? "Connected" : "Disconnected"}</h2>
+          <p>
+            {health.connected
+              ? `Service ${health.data.service} reports ${health.data.status}.`
+              : health.message}
+          </p>
+        </div>
+        <span
+          className={
+            health.connected ? "status-pill status-pill-ok" : "status-pill"
+          }
+        >
+          {health.connected ? health.data.database : "offline"}
+        </span>
+      </section>
+
+      <section className="status-strip" aria-label="Dashboard signals">
         <div>
           <span className="metric-label">Grounding</span>
           <strong>Docs only</strong>
@@ -49,13 +81,41 @@ export default function Home() {
       </section>
 
       <section className="link-grid" aria-label="Dashboard sections">
-        {dashboardLinks.map((link) => (
-          <a className="section-card" href={link.href} key={link.title}>
-            <span>{link.title}</span>
-            <p>{link.description}</p>
-          </a>
-        ))}
+        {dashboardSections.map((section) =>
+          section.external ? (
+            <a
+              className="section-card"
+              href={section.href}
+              key={section.title}
+              rel="noreferrer"
+              target="_blank"
+            >
+              <span>{section.title}</span>
+              <p>{section.description}</p>
+            </a>
+          ) : (
+            <Link className="section-card" href={section.href} key={section.title}>
+              <span>{section.title}</span>
+              <p>{section.description}</p>
+            </Link>
+          ),
+        )}
       </section>
     </div>
   );
+}
+
+async function loadHealth(): Promise<HealthState> {
+  try {
+    return {
+      connected: true,
+      data: await getHealth(),
+    };
+  } catch {
+    return {
+      connected: false,
+      message:
+        "The dashboard cannot reach the API right now. Start the API locally and refresh when it is ready.",
+    };
+  }
 }

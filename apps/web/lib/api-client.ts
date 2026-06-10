@@ -196,6 +196,7 @@ interface RequestOptions {
 async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const response = await fetch(buildApiUrl(path), {
     method: options.method ?? "GET",
+    cache: "no-store",
     headers:
       options.body === undefined
         ? undefined
