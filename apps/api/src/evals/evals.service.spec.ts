@@ -198,6 +198,71 @@ describe('EvalsService', () => {
     });
     expect(llmService.getProviderName).toHaveBeenCalledTimes(1);
   });
+
+  it('lists recent persisted eval runs in descending creation order', async () => {
+    const prisma = {
+      evalRun: {
+        findMany: jest.fn().mockResolvedValue([{ id: 'eval_run_2' }]),
+      },
+    };
+    const service = new EvalsService(
+      {} as unknown as IngestionService,
+      {} as unknown as RetrievalService,
+      {} as unknown as ChatService,
+      prisma as unknown as PrismaService,
+      {} as unknown as LlmService,
+    );
+
+    await expect(service.listRecentEvalRuns(10)).resolves.toEqual([
+      { id: 'eval_run_2' },
+    ]);
+
+    expect(prisma.evalRun.findMany).toHaveBeenCalledWith({
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: 10,
+      include: {
+        caseResults: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+      },
+    });
+  });
+
+  it('finds one persisted eval run with per-case results by id', async () => {
+    const prisma = {
+      evalRun: {
+        findUnique: jest.fn().mockResolvedValue({ id: 'eval_run_1' }),
+      },
+    };
+    const service = new EvalsService(
+      {} as unknown as IngestionService,
+      {} as unknown as RetrievalService,
+      {} as unknown as ChatService,
+      prisma as unknown as PrismaService,
+      {} as unknown as LlmService,
+    );
+
+    await expect(service.findEvalRunById('eval_run_1')).resolves.toEqual({
+      id: 'eval_run_1',
+    });
+
+    expect(prisma.evalRun.findUnique).toHaveBeenCalledWith({
+      where: {
+        id: 'eval_run_1',
+      },
+      include: {
+        caseResults: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+      },
+    });
+  });
 });
 
 describe('eval dataset utilities', () => {

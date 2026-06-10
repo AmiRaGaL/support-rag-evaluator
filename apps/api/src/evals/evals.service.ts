@@ -16,6 +16,16 @@ import type {
   EvalCaseResult,
 } from './eval.types';
 
+export type PersistedEvalRunWithCaseResults = Prisma.EvalRunGetPayload<{
+  include: {
+    caseResults: {
+      orderBy: {
+        createdAt: 'asc';
+      };
+    };
+  };
+}>;
+
 const BASELINE_EVAL_DATASET_RELATIVE_PATH = path.join(
   'datasets',
   'evals',
@@ -73,6 +83,41 @@ export class EvalsService {
       metrics,
       results,
     };
+  }
+
+  async listRecentEvalRuns(
+    limit: number,
+  ): Promise<PersistedEvalRunWithCaseResults[]> {
+    return this.prisma.evalRun.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
+      take: limit,
+      include: {
+        caseResults: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+      },
+    });
+  }
+
+  async findEvalRunById(
+    id: string,
+  ): Promise<PersistedEvalRunWithCaseResults | null> {
+    return this.prisma.evalRun.findUnique({
+      where: {
+        id,
+      },
+      include: {
+        caseResults: {
+          orderBy: {
+            createdAt: 'asc',
+          },
+        },
+      },
+    });
   }
 
   private async persistEvalRun(input: {
