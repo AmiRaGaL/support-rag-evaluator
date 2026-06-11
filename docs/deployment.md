@@ -10,6 +10,7 @@ The app has four deployment concerns:
 - **Web dashboard:** Next.js app in `apps/web`. It calls the API through `NEXT_PUBLIC_API_BASE_URL`.
 - **Database:** PostgreSQL with the `pgvector` extension enabled.
 - **LLM provider:** `deterministic` is the default and requires no external key. `groq` is optional and requires a user-provided Groq API key.
+- **Embedding provider:** `deterministic` is the default and requires no external key. The optional OpenAI-compatible provider requires a server-side embedding API key.
 
 Docker Compose is available for local full-stack demos with Postgres, API, and web services. Hosted production should use platform-managed configuration and secrets rather than local Docker-only values.
 
@@ -25,8 +26,11 @@ Required API environment variables:
 | `LLM_PROVIDER` | Yes | Use `deterministic` by default. Set to `groq` only when a Groq key is configured. |
 | `GROQ_API_KEY` | Only for Groq | Required when `LLM_PROVIDER=groq`. Store it in managed secrets. |
 | `GROQ_CHAT_MODEL` | Optional | Used only with Groq when overriding the provider default. |
-
-There are currently no embedding-related environment variables. Embeddings use the deterministic local provider.
+| `EMBEDDING_PROVIDER` | Optional | Defaults to `deterministic`. Set to `openai` only when real embeddings are intentionally enabled. |
+| `EMBEDDING_API_KEY` | Only for OpenAI embeddings | Required when `EMBEDDING_PROVIDER=openai`. Store it in managed secrets. |
+| `EMBEDDING_MODEL` | Optional | Used only with the real embedding provider when overriding the provider default. |
+| `EMBEDDING_DIMENSIONS` | Optional | Must match the pgvector column dimension, currently `1536`. |
+| `EMBEDDING_BASE_URL` | Optional | OpenAI-compatible embedding base URL override, if needed. |
 
 ## Web Environment
 
@@ -53,6 +57,7 @@ For containerized server-side proxying, `API_BASE_URL` may also be used by the w
 - Provide `DATABASE_URL`, `PORT`, `NODE_ENV=production`, and `LLM_PROVIDER=deterministic` unless Groq is intentionally enabled.
 - Run `npm ci`, `npx prisma generate`, and `npm run build` as part of the build.
 - Run Prisma migrations explicitly before serving production traffic.
+- Confirm embedding dimensions match the deployed pgvector schema before embedding documents.
 
 ### Managed Postgres
 
@@ -67,6 +72,7 @@ For containerized server-side proxying, `API_BASE_URL` may also be used by the w
 - Prisma migrations must be run explicitly.
 - Do not use the local Docker Compose `DATABASE_URL` in hosted production.
 - Back up production data before applying migrations.
+- Changing embedding providers or dimensions generally requires re-embedding stored document chunks.
 
 ## Production Readiness Checklist
 
@@ -79,6 +85,7 @@ For containerized server-side proxying, `API_BASE_URL` may also be used by the w
 - Verify `GET /docs`.
 - Ingest support documents.
 - Embed documents.
+- Confirm retrieval search returns expected chunks before enabling chat traffic.
 - Test `POST /chat` with supported and unsupported questions.
 - Inspect query logs for retrieval, citations, refusal status, and latency.
 - Run the baseline eval and review persisted eval results.
@@ -98,3 +105,4 @@ For containerized server-side proxying, `API_BASE_URL` may also be used by the w
 - Cloud deployment configuration is not included.
 - Deterministic embeddings and the deterministic LLM provider are intended for local, demo, test, and CI-safe behavior.
 - Optional Groq support requires a user-provided `GROQ_API_KEY`.
+- Optional real embedding support requires a user-provided server-side embedding API key.

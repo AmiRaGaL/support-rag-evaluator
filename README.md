@@ -24,6 +24,7 @@ Support RAG Evaluator is an eval-driven RAG support assistant that answers from 
 - API docs: OpenAPI / Swagger UI
 - Local orchestration: Docker Compose
 - LLM providers: deterministic default provider, optional Groq OpenAI-compatible provider
+- Embedding providers: deterministic default provider, optional OpenAI-compatible provider
 - Testing: Jest for the API, ESLint for API and web
 
 ## System Architecture
@@ -123,6 +124,39 @@ Demo flow:
 4. Ask a grounded support question such as "Can I export billing history?"
 5. Inspect Query Logs for retrieval metadata, citations, latency, and refusal behavior.
 6. Run the baseline eval and review Eval Runs.
+
+## Embedding Providers
+
+Deterministic embeddings are the default. They are stable, local, and useful for demos, tests, and CI because they do not require external API keys or network calls.
+
+Real embeddings can be enabled through API environment variables:
+
+| Variable | Notes |
+| --- | --- |
+| `EMBEDDING_PROVIDER` | Defaults to `deterministic`. Set to `openai` for the implemented OpenAI-compatible provider. |
+| `EMBEDDING_API_KEY` | Required only when `EMBEDDING_PROVIDER=openai`. Store real keys in local or managed secrets, never in git. |
+| `EMBEDDING_MODEL` | Optional model override for the real provider. The default is suitable for the current 1536-dimensional schema. |
+| `EMBEDDING_DIMENSIONS` | Must match the pgvector column dimension, currently `1536` for `DocumentChunk.embedding vector(1536)`. |
+| `EMBEDDING_BASE_URL` | Optional OpenAI-compatible base URL override, if using a compatible endpoint. |
+
+Changing embedding providers usually requires re-embedding documents so stored chunk vectors and query vectors come from the same embedding space.
+
+Re-embedding workflow:
+
+1. Configure the embedding provider environment variables.
+2. Run migrations if the database schema changed.
+3. Ingest sample docs if chunks are missing.
+4. Run `POST /retrieval/embed-missing` from Swagger or the dashboard setup action.
+5. Test `POST /retrieval/search` with a known support question.
+6. Test `POST /chat` and inspect citations and retrieved chunks.
+
+Troubleshooting:
+
+- Missing API key: `EMBEDDING_API_KEY` is required only for `EMBEDDING_PROVIDER=openai`.
+- Dimension mismatch: keep `EMBEDDING_DIMENSIONS` aligned with `DocumentChunk.embedding vector(1536)`, or migrate the pgvector column before changing dimensions.
+- No retrieved chunks: ingest docs, run embed-missing, and confirm existing chunks were embedded with the same provider now used for queries.
+- Provider accidentally set in CI: leave `EMBEDDING_PROVIDER` unset or set it to `deterministic`; CI should not need external keys.
+- External provider unavailable: switch back to deterministic for local demos/CI, or retry once the provider is healthy.
 
 ## API Endpoint Summary
 

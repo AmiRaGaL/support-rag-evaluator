@@ -7,6 +7,8 @@ import {
 
 @Injectable()
 export class FakeEmbeddingProvider implements EmbeddingProvider {
+  readonly providerName = 'deterministic';
+
   embed(text: string): Promise<number[]> {
     const vector = new Array<number>(EMBEDDING_DIMENSIONS).fill(0);
     const features = this.extractFeatures(text);
