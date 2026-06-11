@@ -56,7 +56,7 @@ http://localhost:3000
 **Talking points:**
 
 - The dashboard is the portfolio surface for the RAG workflow.
-- It includes setup actions, grounded chat, query-log inspection, and eval-run inspection.
+- It includes setup actions, grounded chat, query-log inspection, eval-run inspection, and eval trend summaries.
 - Actions are user-triggered; the dashboard does not ingest docs or run evals automatically on page load.
 
 ## 5. Check Health
@@ -104,6 +104,7 @@ Can I export billing history?
 **Talking points:**
 
 - The chat path embeds the question, retrieves relevant chunks, and asks the configured provider to answer only from retrieved context.
+- The dashboard tries the streaming chat endpoint first so answer text appears incrementally, then falls back to the stable non-streaming chat endpoint if streaming is unavailable.
 - This question is supported by the sample billing doc.
 - The answer should mention exporting billing history from Settings > Billing > Export History.
 
@@ -144,7 +145,7 @@ Can I export billing history?
 **Talking points:**
 
 - Eval runs are persisted, not just printed to the console.
-- The dashboard shows aggregate metrics and per-case results.
+- The dashboard shows aggregate metrics, recent-run trends, and per-case results.
 - This makes quality visible over time and gives future changes a regression target.
 
 ## 13. Open OpenAPI Docs
@@ -180,7 +181,9 @@ For refusal behavior, ask an unsupported question such as:
 ## Troubleshooting
 
 - **API unavailable:** Confirm `docker compose ps` shows the API running, then check `http://localhost:3001/health`. If needed, review API logs with `docker compose logs api`.
+- **Streaming unavailable:** Use the same question again; the dashboard keeps the non-streaming `POST /chat` path available as fallback. The deterministic provider remains the safest default for demos and CI.
 - **No query logs yet:** Ask a chat question first. Query logs are created by the `/chat` flow.
 - **No eval runs yet:** Click **Run baseline eval** from the dashboard, or call `POST /evals/run-baseline`.
+- **Generated client out of date:** Start the API and run `cd apps/web && npm run generate:api-client` to validate the checked-in client against OpenAPI.
 - **Missing embeddings:** Click **Embed missing chunks** after ingesting sample docs. Retrieval needs embedded chunks to return grounded context.
 - **Groq env not configured:** Leave the default deterministic provider enabled. Only set `LLM_PROVIDER=groq` when a local `GROQ_API_KEY` is configured outside git.

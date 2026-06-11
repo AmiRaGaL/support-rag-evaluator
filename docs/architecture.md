@@ -4,12 +4,13 @@ Support RAG Evaluator is a full-stack, eval-driven support assistant. It is desi
 
 ## System Components
 
-- **Next.js dashboard (`apps/web`)**: Browser UI for setup actions, grounded chat, query logs, and persisted eval runs.
+- **Next.js dashboard (`apps/web`)**: Browser UI for setup actions, grounded chat, query logs, persisted eval runs, and eval trend summaries.
+- **Generated-style web API client**: Checked-in typed client used by the dashboard wrapper, with a local validation script for the OpenAPI document.
 - **NestJS API (`apps/api`)**: Backend application that owns ingestion, retrieval, chat orchestration, logging, eval execution, OpenAPI docs, and database access.
 - **Ingestion module**: Reads bundled markdown support docs, extracts titles/source keys, chunks content, and upserts documents/chunks.
 - **Embeddings module**: Provides deterministic embeddings for local development, tests, and CI-safe retrieval behavior.
 - **Retrieval module**: Embeds queries, searches stored chunk vectors with pgvector, and returns ranked support-document chunks.
-- **Chat/RAG module**: Coordinates retrieval, grounded answer generation, citation metadata, refusal behavior, and query logging.
+- **Chat/RAG module**: Coordinates retrieval, grounded answer generation, streaming and non-streaming responses, citation metadata, refusal behavior, and query logging.
 - **LLM provider abstraction**: Selects a deterministic provider by default or an optional Groq provider when configured.
 - **Query logging**: Persists questions, answers, refusal state, provider, confidence, latency, retrieved chunks, and citation-use metadata.
 - **Eval runner**: Runs the baseline eval dataset through the same ingestion, embedding, retrieval, and chat path used by the API.
@@ -63,7 +64,7 @@ NestJS API (apps/api)
 4. The retrieval service stores vectors in the pgvector `embedding` column.
 5. The endpoint returns the count of chunks embedded.
 
-### Chat Request
+### Non-Streaming Chat Request
 
 1. The dashboard or API caller sends `POST /chat` with a support question.
 2. The chat service trims and validates the question.
@@ -72,6 +73,18 @@ NestJS API (apps/api)
 5. If the provider cannot support the answer from retrieved context, the response is refused.
 6. Answered responses include citation objects that identify the chunks used as support.
 7. The chat service records the query log before returning the response.
+
+`POST /chat` is the stable non-streaming endpoint and keeps the existing response shape.
+
+### Streaming Chat Request
+
+1. The dashboard sends `POST /chat/stream` through the same typed client wrapper and same-origin API proxy.
+2. The API runs the same retrieval, answer-generation, refusal, citation, and query-log path used by `POST /chat`.
+3. The endpoint emits server-sent `answer_delta` events for incremental answer text.
+4. The deterministic provider uses a CI-safe fallback by chunking the final deterministic answer.
+5. When Groq is configured locally, the streaming endpoint can be used with the Groq provider without making Groq required for default development or CI.
+6. The stream ends with a `complete` event containing the final chat response, confidence, and retrieved chunk metadata. The dashboard uses that final event to show citations, refusal metadata, confidence, and retrieved chunks.
+7. If the dashboard cannot stream successfully, it falls back to the stable `POST /chat` endpoint.
 
 ### Query Logging
 
@@ -90,6 +103,20 @@ NestJS API (apps/api)
 5. The scorer checks refusal behavior, citation correctness, and expected answer matching.
 6. Aggregate metrics and per-case results are persisted as `EvalRun` and `EvalCaseResult` rows.
 7. The dashboard reads eval history through `GET /evals/runs` and `GET /evals/runs/:id`.
+
+### Eval Analytics Dashboard
+
+1. The dashboard loads recent persisted eval runs through `GET /evals/runs`.
+2. The web analytics helper shapes run history into totals, pass/fail counts, and weighted refusal, citation, and answer-match accuracy.
+3. The Eval Runs page renders native chart-like summaries for pass-rate and accuracy trends without adding a heavy chart dependency.
+4. Empty, loading, and error states are handled in the dashboard; no evals are created automatically on page load.
+
+### Web API Client
+
+1. Dashboard code imports a small wrapper from `apps/web/lib/api-client.ts`.
+2. The wrapper delegates typed calls to the checked-in generated-style client in `apps/web/lib/api-client.generated.ts`.
+3. `npm run generate:api-client` in `apps/web` validates expected paths against the local OpenAPI document when the API is running.
+4. If the OpenAPI document is unavailable, the script keeps the checked-in client unchanged so CI remains deterministic.
 
 ## Provider Design
 
