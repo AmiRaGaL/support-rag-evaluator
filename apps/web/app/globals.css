@@ -372,6 +372,9 @@ h1 {
 }
 
 .button {
+  align-items: center;
+  display: inline-flex;
+  justify-content: center;
   justify-self: start;
   border: 0;
   border-radius: 8px;
@@ -384,6 +387,12 @@ h1 {
   padding: 0 18px;
 }
 
+.button-secondary {
+  border: 1px solid rgba(23, 126, 137, 0.24);
+  background: #ffffff;
+  color: var(--accent-strong);
+}
+
 .button:disabled {
   cursor: wait;
   opacity: 0.72;
@@ -394,13 +403,55 @@ h1 {
   line-height: 1.55;
 }
 
+.state-panel {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.state-panel strong {
+  color: var(--foreground);
+  font-size: 1rem;
+}
+
+.state-panel p {
+  margin: 0;
+}
+
+.state-panel code,
+.health-panel code {
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.74);
+  color: var(--foreground);
+  font-family:
+    "SFMono-Regular",
+    Consolas,
+    "Liberation Mono",
+    monospace;
+  font-size: 0.9em;
+  padding: 2px 5px;
+}
+
+.state-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding-top: 4px;
+}
+
 .error-state {
   border: 1px solid rgba(180, 35, 24, 0.24);
   border-radius: 8px;
   background: rgba(180, 35, 24, 0.08);
   color: var(--danger);
-  font-weight: 700;
-  padding: 14px 16px;
+}
+
+.error-state p {
+  color: var(--danger);
 }
 
 .success-message {
@@ -443,6 +494,23 @@ h1 {
   margin: 0;
   color: var(--muted);
   line-height: 1.55;
+}
+
+.loading-state {
+  align-items: flex-start;
+  border-color: rgba(23, 126, 137, 0.18);
+  background: var(--surface);
+  color: var(--muted);
+  grid-template-columns: auto 1fr;
+}
+
+.loading-dot {
+  width: 10px;
+  height: 10px;
+  margin-top: 7px;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 6px rgba(23, 126, 137, 0.12);
 }
 
 .result-list {

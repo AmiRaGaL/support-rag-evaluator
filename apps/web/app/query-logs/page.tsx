@@ -11,7 +11,7 @@ import {
   MetricCard,
   PageHeader,
 } from "@/components/ui";
-import { listQueryLogs, type QueryLog } from "@/lib/api-client";
+import { apiBaseUrl, listQueryLogs, type QueryLog } from "@/lib/api-client";
 import { formatConfidence, formatDate } from "@/lib/formatters";
 
 export default function QueryLogsPage() {
@@ -30,13 +30,9 @@ export default function QueryLogsPage() {
           setLogs(result);
           setError(null);
         }
-      } catch (caughtError) {
+      } catch {
         if (isCurrent) {
-          setError(
-            caughtError instanceof Error
-              ? caughtError.message
-              : "Unable to load query logs.",
-          );
+          setError("query-logs-request-failed");
         }
       } finally {
         if (isCurrent) {
@@ -61,10 +57,32 @@ export default function QueryLogsPage() {
       />
 
       <Card className="data-panel" aria-label="Recent query logs">
-        {isLoading ? <LoadingState>Loading query logs...</LoadingState> : null}
-        {error ? <ErrorState>{error}</ErrorState> : null}
+        {isLoading ? (
+          <LoadingState title="Loading query logs">
+            Fetching the latest support questions, answers, retrieval metadata,
+            and latency from the API.
+          </LoadingState>
+        ) : null}
+        {error ? (
+          <ErrorState title="Query logs are unavailable">
+            The dashboard could not load recent activity from{" "}
+            <code>{apiBaseUrl}</code>. Check the API base URL and make sure the
+            backend is running locally.
+          </ErrorState>
+        ) : null}
         {!isLoading && !error && logs.length === 0 ? (
-          <EmptyState>No query logs yet. Send a chat question first.</EmptyState>
+          <EmptyState
+            action={
+              <Link className="button button-secondary" href="/chat">
+                Ask a question
+              </Link>
+            }
+            title="No query logs yet"
+          >
+            Send a chat question to create the first query log. If supported
+            questions keep refusing, ingest sample docs and embed missing chunks
+            before trying again.
+          </EmptyState>
         ) : null}
 
         {logs.length > 0 ? (

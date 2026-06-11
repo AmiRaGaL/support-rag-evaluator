@@ -11,7 +11,7 @@ import {
   MetricCard,
   PageHeader,
 } from "@/components/ui";
-import { getEvalRun, type EvalRun } from "@/lib/api-client";
+import { apiBaseUrl, getEvalRun, type EvalRun } from "@/lib/api-client";
 import { formatDate, formatPercent } from "@/lib/formatters";
 
 export default function EvalRunDetailPage() {
@@ -31,13 +31,9 @@ export default function EvalRunDetailPage() {
           setRun(result);
           setError(null);
         }
-      } catch (caughtError) {
+      } catch {
         if (isCurrent) {
-          setError(
-            caughtError instanceof Error
-              ? caughtError.message
-              : "Unable to load eval run detail.",
-          );
+          setError("eval-run-detail-request-failed");
         }
       } finally {
         if (isCurrent) {
@@ -59,8 +55,18 @@ export default function EvalRunDetailPage() {
         Back to eval runs
       </Link>
 
-      {isLoading ? <LoadingState>Loading eval run...</LoadingState> : null}
-      {error ? <ErrorState>{error}</ErrorState> : null}
+      {isLoading ? (
+        <LoadingState title="Loading eval run">
+          Fetching saved metrics and per-case results for this baseline run.
+        </LoadingState>
+      ) : null}
+      {error ? (
+        <ErrorState title="Eval run detail is unavailable">
+          The dashboard could not load this eval run from{" "}
+          <code>{apiBaseUrl}</code>. Check the API base URL, then return to the
+          eval run list and try again.
+        </ErrorState>
+      ) : null}
 
       {run ? (
         <>
@@ -118,7 +124,10 @@ export default function EvalRunDetailPage() {
                   ))}
                 </div>
               ) : (
-                <EmptyState>No case results recorded.</EmptyState>
+                <EmptyState title="No case results recorded">
+                  This saved eval run has no per-case results. Run the baseline
+                  eval again to create a complete demo record.
+                </EmptyState>
               )}
             </section>
           </Card>

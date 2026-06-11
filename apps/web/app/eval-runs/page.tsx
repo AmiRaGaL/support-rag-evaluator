@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
+  apiBaseUrl,
   listEvalRuns,
   runBaselineEval,
   type BaselineEvalRun,
@@ -43,13 +44,9 @@ export default function EvalRunsPage() {
           setRuns(result);
           setError(null);
         }
-      } catch (caughtError) {
+      } catch {
         if (isCurrent) {
-          setError(
-            caughtError instanceof Error
-              ? caughtError.message
-              : "Unable to load eval runs.",
-          );
+          setError("eval-runs-request-failed");
         }
       } finally {
         if (isCurrent) {
@@ -74,12 +71,8 @@ export default function EvalRunsPage() {
       const result: BaselineEvalRun = await runBaselineEval();
       setSuccess(`Baseline eval completed and saved as ${result.evalRunId}.`);
       await loadRuns();
-    } catch (caughtError) {
-      setError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : "Unable to run baseline eval.",
-      );
+    } catch {
+      setError("baseline-run-failed");
     } finally {
       setIsRunning(false);
       setIsLoading(false);
@@ -97,20 +90,71 @@ export default function EvalRunsPage() {
       <Card className="toolbar-panel">
         <div>
           <h2>Baseline eval</h2>
-          <p>Run the local baseline dataset and refresh the recent run list.</p>
+          <p>
+            Runs the local baseline dataset, ingests sample docs, embeds missing
+            chunks, and refreshes the recent run list.
+          </p>
         </div>
         <Button disabled={isRunning} onClick={handleRunBaseline} type="button">
-          {isRunning ? "Running..." : "Run baseline"}
+          {isRunning ? "Running baseline..." : "Run baseline"}
         </Button>
       </Card>
 
+      {isRunning ? (
+        <LoadingState title="Running baseline eval">
+          Preparing sample docs, embedding missing chunks, running eval cases,
+          and saving the result. This can take a moment on a fresh database.
+        </LoadingState>
+      ) : null}
       {success ? <p className="success-message">{success}</p> : null}
-      {error ? <ErrorState>{error}</ErrorState> : null}
+      {error ? (
+        <ErrorState
+          title={
+            error === "baseline-run-failed"
+              ? "Baseline eval did not finish"
+              : "Eval runs are unavailable"
+          }
+        >
+          {error === "baseline-run-failed" ? (
+            <>
+              Check that the API is running at <code>{apiBaseUrl}</code>. The
+              baseline runner handles sample docs and missing embeddings, so no
+              Groq key is required for the default deterministic setup.
+            </>
+          ) : (
+            <>
+              The dashboard could not load eval runs from{" "}
+              <code>{apiBaseUrl}</code>. Check the API base URL and make sure
+              the backend is running locally.
+            </>
+          )}
+        </ErrorState>
+      ) : null}
 
       <Card className="data-panel" aria-label="Recent eval runs">
-        {isLoading ? <LoadingState>Loading eval runs...</LoadingState> : null}
+        {isLoading ? (
+          <LoadingState title="Loading eval runs">
+            Fetching recent baseline runs and persisted eval metrics from the
+            API.
+          </LoadingState>
+        ) : null}
         {!isLoading && !error && runs.length === 0 ? (
-          <EmptyState>No eval runs yet. Run the baseline eval.</EmptyState>
+          <EmptyState
+            action={
+              <Button
+                disabled={isRunning}
+                onClick={handleRunBaseline}
+                type="button"
+              >
+                Run baseline
+              </Button>
+            }
+            title="No eval runs yet"
+          >
+            Run the baseline eval to create the first saved run. It will ingest
+            sample docs and embed missing chunks before evaluating retrieval,
+            citations, answers, and refusals.
+          </EmptyState>
         ) : null}
 
         {runs.length > 0 ? (

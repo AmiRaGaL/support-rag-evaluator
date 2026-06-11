@@ -1,5 +1,13 @@
 import Link from "next/link";
-import { Badge, Card, MetricCard, PageHeader } from "@/components/ui";
+import { Suspense } from "react";
+import {
+  Badge,
+  Card,
+  ErrorState,
+  LoadingState,
+  MetricCard,
+  PageHeader,
+} from "@/components/ui";
 import { apiBaseUrl, getHealth, type HealthResponse } from "@/lib/api-client";
 
 export const dynamic = "force-dynamic";
@@ -33,8 +41,6 @@ type HealthState =
   | { connected: false; message: string };
 
 export default async function Home() {
-  const health = await loadHealth();
-
   return (
     <div className="home">
       <PageHeader
@@ -43,20 +49,9 @@ export default async function Home() {
         title="Support RAG Evaluator"
       />
 
-      <Card className="health-panel" aria-label="API health">
-        <div>
-          <p className="eyebrow">API health</p>
-          <h2>{health.connected ? "Connected" : "Disconnected"}</h2>
-          <p>
-            {health.connected
-              ? `Service ${health.data.service} reports ${health.data.status}.`
-              : health.message}
-          </p>
-        </div>
-        <Badge tone={health.connected ? "success" : "danger"}>
-          {health.connected ? health.data.database : "offline"}
-        </Badge>
-      </Card>
+      <Suspense fallback={<HealthPanelLoading />}>
+        <HealthPanel />
+      </Suspense>
 
       <dl className="metric-grid overview-metrics" aria-label="Dashboard signals">
         <MetricCard label="Grounding" value="Docs only" />
@@ -94,6 +89,48 @@ export default async function Home() {
   );
 }
 
+async function HealthPanel() {
+  const health = await loadHealth();
+
+  if (!health.connected) {
+    return (
+      <Card className="health-panel" aria-label="API health">
+        <ErrorState title="API unavailable">
+          {health.message} Check that <code>NEXT_PUBLIC_API_BASE_URL</code>{" "}
+          points to <code>{apiBaseUrl}</code>, then refresh the dashboard.
+        </ErrorState>
+        <Badge tone="danger">offline</Badge>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="health-panel" aria-label="API health">
+      <div>
+        <p className="eyebrow">API health</p>
+        <h2>Connected</h2>
+        <p>
+          Service {health.data.service} reports {health.data.status}. Database
+          status is {health.data.database}.
+        </p>
+      </div>
+      <Badge tone="success">{health.data.database}</Badge>
+    </Card>
+  );
+}
+
+function HealthPanelLoading() {
+  return (
+    <Card className="health-panel" aria-label="API health">
+      <LoadingState title="Checking API health">
+        Contacting <code>{apiBaseUrl}/health</code> before showing dashboard
+        status.
+      </LoadingState>
+      <Badge>checking</Badge>
+    </Card>
+  );
+}
+
 async function loadHealth(): Promise<HealthState> {
   try {
     return {
@@ -103,8 +140,7 @@ async function loadHealth(): Promise<HealthState> {
   } catch {
     return {
       connected: false,
-      message:
-        "The dashboard cannot reach the API right now. Start the API locally and refresh when it is ready.",
+      message: "The dashboard cannot reach the support API right now.",
     };
   }
 }

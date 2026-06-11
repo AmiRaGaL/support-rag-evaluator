@@ -11,7 +11,7 @@ import {
   MetricCard,
   PageHeader,
 } from "@/components/ui";
-import { getQueryLog, type QueryLog } from "@/lib/api-client";
+import { apiBaseUrl, getQueryLog, type QueryLog } from "@/lib/api-client";
 import { formatConfidence, formatDate } from "@/lib/formatters";
 
 export default function QueryLogDetailPage() {
@@ -31,13 +31,9 @@ export default function QueryLogDetailPage() {
           setLog(result);
           setError(null);
         }
-      } catch (caughtError) {
+      } catch {
         if (isCurrent) {
-          setError(
-            caughtError instanceof Error
-              ? caughtError.message
-              : "Unable to load query log detail.",
-          );
+          setError("query-log-detail-request-failed");
         }
       } finally {
         if (isCurrent) {
@@ -59,8 +55,19 @@ export default function QueryLogDetailPage() {
         Back to query logs
       </Link>
 
-      {isLoading ? <LoadingState>Loading query log...</LoadingState> : null}
-      {error ? <ErrorState>{error}</ErrorState> : null}
+      {isLoading ? (
+        <LoadingState title="Loading query log">
+          Fetching the answer, retrieval metadata, and saved chunks for this
+          request.
+        </LoadingState>
+      ) : null}
+      {error ? (
+        <ErrorState title="Query log detail is unavailable">
+          The dashboard could not load this saved query from{" "}
+          <code>{apiBaseUrl}</code>. Check the API base URL, then return to the
+          query log list and try again.
+        </ErrorState>
+      ) : null}
 
       {log ? (
         <>
@@ -109,7 +116,10 @@ export default function QueryLogDetailPage() {
                   ))}
                 </div>
               ) : (
-                <EmptyState>No retrieved chunks recorded.</EmptyState>
+                <EmptyState title="No retrieved chunks recorded">
+                  This log has no chunk details. Ingest sample docs and embed
+                  missing chunks before sending another supported question.
+                </EmptyState>
               )}
             </section>
           </Card>

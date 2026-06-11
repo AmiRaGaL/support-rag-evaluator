@@ -2,6 +2,7 @@
 
 import { FormEvent, ReactNode, useState } from "react";
 import {
+  apiBaseUrl,
   listQueryLogs,
   sendChatMessage,
   type ChatResponse,
@@ -14,6 +15,7 @@ import {
   Card,
   EmptyState,
   ErrorState,
+  LoadingState,
   MetricCard,
   PageHeader,
 } from "@/components/ui";
@@ -35,7 +37,7 @@ export default function ChatPage() {
     const trimmedQuestion = question.trim();
 
     if (!trimmedQuestion) {
-      setError("Enter a support question before sending.");
+      setError("empty-question");
       setResponse(null);
       setQueryLog(null);
       return;
@@ -52,14 +54,10 @@ export default function ChatPage() {
 
       setResponse(result);
       setQueryLog(await findMatchingQueryLog(result));
-    } catch (caughtError) {
+    } catch {
       setResponse(null);
       setQueryLog(null);
-      setError(
-        caughtError instanceof Error
-          ? caughtError.message
-          : "The chat request failed. Check that the API is running locally.",
-      );
+      setError("chat-request-failed");
     } finally {
       setIsLoading(false);
     }
@@ -106,7 +104,32 @@ export default function ChatPage() {
         </form>
       </Card>
 
-      {error ? <ErrorState>{error}</ErrorState> : null}
+      {isLoading ? (
+        <LoadingState title="Retrieving support context">
+          Searching embedded docs, drafting a grounded answer, and checking for
+          citations before returning a response.
+        </LoadingState>
+      ) : null}
+
+      {error ? (
+        <ErrorState
+          title={
+            error === "empty-question"
+              ? "Add a support question"
+              : "Chat request did not complete"
+          }
+        >
+          {error === "empty-question" ? (
+            "Enter a question about the support docs, then send it again."
+          ) : (
+            <>
+              Check that the API is running at <code>{apiBaseUrl}</code>. If
+              the API is up but answers are unsupported, ingest sample docs and
+              embed missing chunks before trying again.
+            </>
+          )}
+        </ErrorState>
+      ) : null}
 
       {response ? (
         <Card className="chat-result" aria-label="Chat response">
@@ -136,7 +159,8 @@ export default function ChatPage() {
           </dl>
 
           <ResultList
-            emptyText="No retrieved chunk details were found in the query log yet."
+            emptyText="This response was saved before matching query-log details were available, or retrieval returned no chunks. Ingest sample docs and run the embed-missing step if this keeps happening."
+            emptyTitle="No retrieved chunks to inspect"
             items={retrievedChunks}
             renderItem={(chunk, index) => (
               <RetrievedChunkItem chunk={chunk} index={index} />
@@ -145,7 +169,8 @@ export default function ChatPage() {
           />
 
           <ResultList
-            emptyText="No citations were returned."
+            emptyText="Refusals and unsupported answers do not include citations. For supported questions, ingest sample docs and embed missing chunks so the assistant has source material to cite."
+            emptyTitle="No citations returned"
             items={response.citations}
             renderItem={(citation) => (
               <>
@@ -167,11 +192,13 @@ export default function ChatPage() {
 
 function ResultList<T>({
   emptyText,
+  emptyTitle,
   items,
   renderItem,
   title,
 }: {
   emptyText: string;
+  emptyTitle: string;
   items: T[];
   renderItem: (item: T, index: number) => ReactNode;
   title: string;
@@ -192,7 +219,7 @@ function ResultList<T>({
           ))}
         </div>
       ) : (
-        <EmptyState>{emptyText}</EmptyState>
+        <EmptyState title={emptyTitle}>{emptyText}</EmptyState>
       )}
     </section>
   );
