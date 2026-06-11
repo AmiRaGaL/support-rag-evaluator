@@ -3,6 +3,7 @@
 import { FormEvent, useState } from "react";
 import {
   apiBaseUrl,
+  getApiErrorMessage,
   listQueryLogs,
   sendChatMessage,
   streamChatMessage,
@@ -68,8 +69,8 @@ export default function ChatPage() {
         question: trimmedQuestion,
         limit,
       });
-    } catch {
-      await sendFallbackChatMessage(trimmedQuestion);
+    } catch (error) {
+      await sendFallbackChatMessage(trimmedQuestion, error);
     } finally {
       setIsLoading(false);
     }
@@ -100,7 +101,10 @@ export default function ChatPage() {
     }
   }
 
-  async function sendFallbackChatMessage(trimmedQuestion: string) {
+  async function sendFallbackChatMessage(
+    trimmedQuestion: string,
+    streamingError?: unknown,
+  ) {
     try {
       setStreamedAnswer("");
       setStreamComplete(null);
@@ -111,10 +115,10 @@ export default function ChatPage() {
 
       setResponse(result);
       setQueryLog(await findMatchingQueryLog(result));
-    } catch {
+    } catch (error) {
       setResponse(null);
       setQueryLog(null);
-      setError("chat-request-failed");
+      setError(getApiErrorMessage(error ?? streamingError));
     }
   }
 
@@ -182,18 +186,14 @@ export default function ChatPage() {
       {error ? (
         <ErrorState
           title={
-            error === "empty-question"
-              ? "Add a support question"
-              : "Chat request did not complete"
+            error === "empty-question" ? "Add a support question" : "Chat request did not complete"
           }
         >
           {error === "empty-question" ? (
             "Enter a question about the support docs, then send it again."
           ) : (
             <>
-              Check that the API is running at <code>{apiBaseUrl}</code>. If
-              the API is up but answers are unsupported, ingest sample docs and
-              embed missing chunks before trying again.
+              {error} API base URL: <code>{apiBaseUrl}</code>.
             </>
           )}
         </ErrorState>

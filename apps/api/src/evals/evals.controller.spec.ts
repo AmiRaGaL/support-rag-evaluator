@@ -36,6 +36,7 @@ describe('EvalsController', () => {
         citationAccuracy: 1,
         answerMatchAccuracy: 1,
         provider: 'deterministic',
+        judgeProvider: 'deterministic',
         createdAt,
         results: [
           {
@@ -57,6 +58,12 @@ describe('EvalsController', () => {
             refusalCorrect: true,
             citationCorrect: true,
             answerMatch: true,
+            judgeProvider: 'deterministic',
+            judgeScore: 1,
+            judgePassed: true,
+            judgeReasoning:
+              'Deterministic judge mirrored the baseline scoring dimensions.',
+            judgeResult: deterministicJudgeResult(),
           },
         ],
       },
@@ -100,6 +107,7 @@ describe('EvalsController', () => {
       name: 'baseline',
       datasetPath: '/repo/datasets/evals/baseline.json',
       provider: 'deterministic',
+      judgeProvider: 'deterministic',
       createdAt,
       results: [
         {
@@ -126,6 +134,7 @@ describe('EvalsController', () => {
     evalsService.runBaseline.mockResolvedValue({
       evalRunId: 'eval_run_1',
       dataset: '/repo/datasets/evals/baseline.json',
+      judgeProvider: 'deterministic',
       metrics: {
         totalCases: 0,
         refusalAccuracy: 0,
@@ -158,6 +167,7 @@ function persistedRun(input: { createdAt: Date }) {
     citationAccuracy: 1,
     answerMatchAccuracy: 1,
     provider: 'deterministic',
+    judgeProvider: 'deterministic',
     createdAt: input.createdAt,
     caseResults: [
       {
@@ -181,8 +191,29 @@ function persistedRun(input: { createdAt: Date }) {
         refusalCorrect: true,
         citationCorrect: true,
         answerMatch: true,
+        judgeProvider: 'deterministic',
+        judgeScore: 1,
+        judgePassed: true,
+        judgeReasoning:
+          'Deterministic judge mirrored the baseline scoring dimensions.',
+        judgeResult: deterministicJudgeResult(),
         createdAt: input.createdAt,
       },
     ],
+  };
+}
+
+function deterministicJudgeResult() {
+  return {
+    provider: 'deterministic',
+    score: 1,
+    passed: true,
+    reasoning: 'Deterministic judge mirrored the baseline scoring dimensions.',
+    dimensions: {
+      groundedness: true,
+      answerCorrectness: true,
+      citationSupport: true,
+      refusalBehavior: true,
+    },
   };
 }

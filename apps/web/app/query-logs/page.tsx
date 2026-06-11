@@ -11,7 +11,12 @@ import {
   MetricCard,
   PageHeader,
 } from "@/components/ui";
-import { apiBaseUrl, listQueryLogs, type QueryLog } from "@/lib/api-client";
+import {
+  apiBaseUrl,
+  getApiErrorMessage,
+  listQueryLogs,
+  type QueryLog,
+} from "@/lib/api-client";
 import { formatConfidence, formatDate } from "@/lib/formatters";
 
 export default function QueryLogsPage() {
@@ -30,9 +35,9 @@ export default function QueryLogsPage() {
           setLogs(result);
           setError(null);
         }
-      } catch {
+      } catch (error) {
         if (isCurrent) {
-          setError("query-logs-request-failed");
+          setError(getApiErrorMessage(error));
         }
       } finally {
         if (isCurrent) {
@@ -65,9 +70,7 @@ export default function QueryLogsPage() {
         ) : null}
         {error ? (
           <ErrorState title="Query logs are unavailable">
-            The dashboard could not load recent activity from{" "}
-            <code>{apiBaseUrl}</code>. Check the API base URL and make sure the
-            backend is running locally.
+            {error} API base URL: <code>{apiBaseUrl}</code>.
           </ErrorState>
         ) : null}
         {!isLoading && !error && logs.length === 0 ? (

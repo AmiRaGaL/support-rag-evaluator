@@ -1,4 +1,9 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
+import {
+  Injectable,
+  InternalServerErrorException,
+  Optional,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import type { Prisma } from '@prisma/client';
 import { existsSync } from 'fs';
 import { promises as fs } from 'fs';
@@ -8,6 +13,11 @@ import { IngestionService } from '../ingestion/ingestion.service';
 import { LlmService } from '../llm/llm.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { RetrievalService } from '../retrieval/retrieval.service';
+import {
+  DeterministicEvalJudgeProvider,
+  createEvalJudgeProvider,
+  type EvalJudgeProvider,
+} from './eval-judge';
 import { scoreEvalCase } from './eval-scorer';
 import type {
   BaselineEvalCase,
@@ -40,6 +50,7 @@ export class EvalsService {
     private readonly chatService: ChatService,
     private readonly prisma: PrismaService,
     private readonly llmService: LlmService,
+    @Optional() private readonly configService?: ConfigService,
   ) {}
 
   async runBaseline(): Promise<BaselineEvalRunResult> {
@@ -50,6 +61,7 @@ export class EvalsService {
     await this.retrievalService.embedMissingChunks();
 
     const results: EvalCaseResult[] = [];
+    const judgeProvider = this.createJudgeProvider();
 
     for (const evalCase of evalCases) {
       const result = await this.chatService.answerQuestionWithMetadata({
@@ -58,7 +70,7 @@ export class EvalsService {
       const response = result.response;
       const score = scoreEvalCase(evalCase, response);
 
-      results.push({
+      const evalResult: EvalCaseResult = {
         id: evalCase.id,
         question: evalCase.question,
         type: evalCase.type,
@@ -67,7 +79,14 @@ export class EvalsService {
         response,
         actualConfidence: result.confidence,
         score,
+      };
+
+      evalResult.judge = await judgeProvider.judge({
+        evalCase,
+        result: evalResult,
       });
+
+      results.push(evalResult);
     }
 
     const metrics = this.calculateMetrics(results);
@@ -75,11 +94,13 @@ export class EvalsService {
       datasetPath,
       metrics,
       results,
+      judgeProvider: judgeProvider.providerName,
     });
 
     return {
       evalRunId: evalRun.id,
       dataset: datasetPath,
+      judgeProvider: judgeProvider.providerName,
       metrics,
       results,
     };
@@ -128,6 +149,7 @@ export class EvalsService {
     datasetPath: string;
     metrics: EvalAggregateMetrics;
     results: EvalCaseResult[];
+    judgeProvider: string;
   }): Promise<{ id: string }> {
     const passedCases = input.results.filter((result) =>
       this.isCasePassed(result),
@@ -147,6 +169,7 @@ export class EvalsService {
           citationAccuracy: input.metrics.citationAccuracy,
           answerMatchAccuracy: input.metrics.answerMatchAccuracy,
           provider,
+          judgeProvider: input.judgeProvider,
           caseResults: {
             create: input.results.map((result) => ({
               caseId: result.id,
@@ -163,6 +186,13 @@ export class EvalsService {
               refusalCorrect: result.score.refusalCorrect,
               citationCorrect: result.score.citationCorrect,
               answerMatch: result.score.answerMatch,
+              judgeProvider: result.judge?.provider,
+              judgeScore: result.judge?.score,
+              judgePassed: result.judge?.passed,
+              judgeReasoning: result.judge?.reasoning,
+              judgeResult: result.judge
+                ? (result.judge as unknown as Prisma.InputJsonValue)
+                : undefined,
             })),
           },
         },
@@ -177,8 +207,17 @@ export class EvalsService {
     return (
       result.score.refusalCorrect &&
       result.score.citationCorrect &&
-      result.score.answerMatch
+      result.score.answerMatch &&
+      (result.judge?.passed ?? true)
     );
+  }
+
+  private createJudgeProvider(): EvalJudgeProvider {
+    if (!this.configService) {
+      return new DeterministicEvalJudgeProvider();
+    }
+
+    return createEvalJudgeProvider(this.configService);
   }
 
   private calculateMetrics(results: EvalCaseResult[]): EvalAggregateMetrics {

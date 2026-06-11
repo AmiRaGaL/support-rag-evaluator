@@ -11,7 +11,12 @@ import {
   MetricCard,
   PageHeader,
 } from "@/components/ui";
-import { apiBaseUrl, getQueryLog, type QueryLog } from "@/lib/api-client";
+import {
+  apiBaseUrl,
+  getApiErrorMessage,
+  getQueryLog,
+  type QueryLog,
+} from "@/lib/api-client";
 import { formatConfidence, formatDate } from "@/lib/formatters";
 
 export default function QueryLogDetailPage() {
@@ -31,9 +36,9 @@ export default function QueryLogDetailPage() {
           setLog(result);
           setError(null);
         }
-      } catch {
+      } catch (error) {
         if (isCurrent) {
-          setError("query-log-detail-request-failed");
+          setError(getApiErrorMessage(error));
         }
       } finally {
         if (isCurrent) {
@@ -63,9 +68,7 @@ export default function QueryLogDetailPage() {
       ) : null}
       {error ? (
         <ErrorState title="Query log detail is unavailable">
-          The dashboard could not load this saved query from{" "}
-          <code>{apiBaseUrl}</code>. Check the API base URL, then return to the
-          query log list and try again.
+          {error} API base URL: <code>{apiBaseUrl}</code>.
         </ErrorState>
       ) : null}
 

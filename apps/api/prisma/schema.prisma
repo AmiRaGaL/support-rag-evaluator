@@ -81,11 +81,13 @@ model EvalRun {
   citationAccuracy    Float
   answerMatchAccuracy Float
   provider            String
+  judgeProvider       String           @default("deterministic")
   createdAt           DateTime         @default(now())
   caseResults         EvalCaseResult[]
 
   @@index([createdAt])
   @@index([provider])
+  @@index([judgeProvider])
 }
 
 model EvalCaseResult {
@@ -104,6 +106,11 @@ model EvalCaseResult {
   refusalCorrect   Boolean
   citationCorrect  Boolean
   answerMatch      Boolean
+  judgeProvider    String?
+  judgeScore       Float?
+  judgePassed      Boolean?
+  judgeReasoning   String?
+  judgeResult      Json?
   createdAt        DateTime @default(now())
 
   evalRun EvalRun @relation(fields: [evalRunId], references: [id], onDelete: Cascade)
@@ -112,4 +119,5 @@ model EvalCaseResult {
   @@index([caseId])
   @@index([passed])
   @@index([type])
+  @@index([judgePassed])
 }

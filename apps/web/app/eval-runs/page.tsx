@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   apiBaseUrl,
+  getApiErrorMessage,
   listEvalRuns,
   runBaselineEval,
   type BaselineEvalRun,
@@ -45,9 +46,9 @@ export default function EvalRunsPage() {
           setRuns(result);
           setError(null);
         }
-      } catch {
+      } catch (error) {
         if (isCurrent) {
-          setError("eval-runs-request-failed");
+          setError(getApiErrorMessage(error));
         }
       } finally {
         if (isCurrent) {
@@ -72,8 +73,8 @@ export default function EvalRunsPage() {
       const result: BaselineEvalRun = await runBaselineEval();
       setSuccess(`Baseline eval completed and saved as ${result.evalRunId}.`);
       await loadRuns();
-    } catch {
-      setError("baseline-run-failed");
+    } catch (error) {
+      setError(getApiErrorMessage(error));
     } finally {
       setIsRunning(false);
       setIsLoading(false);
@@ -113,24 +114,12 @@ export default function EvalRunsPage() {
       {error ? (
         <ErrorState
           title={
-            error === "baseline-run-failed"
-              ? "Baseline eval did not finish"
-              : "Eval runs are unavailable"
+            error.includes("authentication")
+              ? "API authentication failed"
+              : "Eval request did not complete"
           }
         >
-          {error === "baseline-run-failed" ? (
-            <>
-              Check that the API is running at <code>{apiBaseUrl}</code>. The
-              baseline runner handles sample docs and missing embeddings, so no
-              Groq key is required for the default deterministic setup.
-            </>
-          ) : (
-            <>
-              The dashboard could not load eval runs from{" "}
-              <code>{apiBaseUrl}</code>. Check the API base URL and make sure
-              the backend is running locally.
-            </>
-          )}
+          {error} API base URL: <code>{apiBaseUrl}</code>.
         </ErrorState>
       ) : null}
 

@@ -7,8 +7,10 @@ import {
 } from '@nestjs/swagger';
 import { HealthResponseDto } from './health-response.dto';
 import { PrismaService } from './prisma/prisma.service';
+import { Public } from './auth/public.decorator';
 
 @ApiTags('health')
+@Public()
 @Controller('health')
 export class HealthController {
   constructor(private readonly prisma: PrismaService) {}
