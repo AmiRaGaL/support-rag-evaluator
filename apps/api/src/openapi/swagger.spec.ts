@@ -95,6 +95,12 @@ describe('OpenAPI documentation', () => {
     expect(document.info.title).toBe(OPENAPI_TITLE);
   });
 
+  it('documents optional bearer authentication', () => {
+    const document = setupSwagger(app);
+
+    expect(document.components?.securitySchemes).toHaveProperty('bearer');
+  });
+
   it('includes important API paths in the OpenAPI document', () => {
     const document = setupSwagger(app);
 

@@ -50,9 +50,17 @@ async function proxyRequest(request: Request, context: RouteContext) {
 function buildHeaders(request: Request) {
   const headers = new Headers();
   const contentType = request.headers.get("content-type");
+  const serverToken = process.env.API_AUTH_TOKEN?.trim();
+  const incomingAuthorization = request.headers.get("authorization");
 
   if (contentType) {
     headers.set("content-type", contentType);
+  }
+
+  if (serverToken) {
+    headers.set("authorization", `Bearer ${serverToken}`);
+  } else if (incomingAuthorization) {
+    headers.set("authorization", incomingAuthorization);
   }
 
   return headers;

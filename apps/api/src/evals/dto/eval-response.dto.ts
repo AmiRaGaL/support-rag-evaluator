@@ -53,6 +53,66 @@ export class EvalScoreResponseDto {
   answerMatch!: boolean;
 }
 
+export class EvalJudgeDimensionsResponseDto {
+  @ApiProperty({
+    description: 'Whether the answer is grounded in retrieved support context.',
+    example: true,
+  })
+  groundedness!: boolean;
+
+  @ApiProperty({
+    description: 'Whether the answer is correct for the eval case.',
+    example: true,
+  })
+  answerCorrectness!: boolean;
+
+  @ApiProperty({
+    description: 'Whether citations support the answer.',
+    example: true,
+  })
+  citationSupport!: boolean;
+
+  @ApiProperty({
+    description: 'Whether refusal behavior matched the expected case type.',
+    example: true,
+  })
+  refusalBehavior!: boolean;
+}
+
+export class EvalJudgeResultResponseDto {
+  @ApiProperty({
+    description: 'Judge provider used for this eval case.',
+    example: 'deterministic',
+  })
+  provider!: string;
+
+  @ApiProperty({
+    description: 'Judge score from 0 to 1.',
+    minimum: 0,
+    maximum: 1,
+    example: 1,
+  })
+  score!: number;
+
+  @ApiProperty({
+    description: 'Whether the judge marked the case as passing.',
+    example: true,
+  })
+  passed!: boolean;
+
+  @ApiProperty({
+    description: 'Short judge rationale.',
+    example: 'The answer is supported by the cited billing documentation.',
+  })
+  reasoning!: string;
+
+  @ApiProperty({
+    description: 'Judge dimension verdicts.',
+    type: EvalJudgeDimensionsResponseDto,
+  })
+  dimensions!: EvalJudgeDimensionsResponseDto;
+}
+
 export class BaselineEvalCaseResultResponseDto {
   @ApiProperty({
     description: 'Eval case identifier from the baseline dataset.',
@@ -102,6 +162,13 @@ export class BaselineEvalCaseResultResponseDto {
     type: EvalScoreResponseDto,
   })
   score!: EvalScoreResponseDto;
+
+  @ApiProperty({
+    description: 'Optional judge result for this eval case.',
+    type: EvalJudgeResultResponseDto,
+    required: false,
+  })
+  judge?: EvalJudgeResultResponseDto;
 }
 
 export class BaselineEvalRunResponseDto {
@@ -116,6 +183,12 @@ export class BaselineEvalRunResponseDto {
     example: '/app/datasets/evals/baseline.json',
   })
   dataset!: string;
+
+  @ApiProperty({
+    description: 'Judge provider used for the eval run.',
+    example: 'deterministic',
+  })
+  judgeProvider!: string;
 
   @ApiProperty({
     description: 'Aggregate eval metrics.',
@@ -221,6 +294,41 @@ export class PersistedEvalCaseResultResponseDto {
     example: true,
   })
   answerMatch!: boolean;
+
+  @ApiProperty({
+    description: 'Optional judge provider used for this eval case.',
+    nullable: true,
+    example: 'deterministic',
+  })
+  judgeProvider!: string | null;
+
+  @ApiProperty({
+    description: 'Optional judge score from 0 to 1.',
+    nullable: true,
+    example: 1,
+  })
+  judgeScore!: number | null;
+
+  @ApiProperty({
+    description: 'Optional judge pass/fail verdict.',
+    nullable: true,
+    example: true,
+  })
+  judgePassed!: boolean | null;
+
+  @ApiProperty({
+    description: 'Optional judge rationale.',
+    nullable: true,
+    example: 'The answer is supported by citations.',
+  })
+  judgeReasoning!: string | null;
+
+  @ApiProperty({
+    description: 'Optional structured judge result.',
+    nullable: true,
+    type: EvalJudgeResultResponseDto,
+  })
+  judgeResult!: EvalJudgeResultResponseDto | null;
 }
 
 export class EvalRunResponseDto {
@@ -283,6 +391,12 @@ export class EvalRunResponseDto {
     example: 'deterministic',
   })
   provider!: string;
+
+  @ApiProperty({
+    description: 'Judge provider used for the eval run.',
+    example: 'deterministic',
+  })
+  judgeProvider!: string;
 
   @ApiProperty({
     description: 'Eval run creation timestamp.',

@@ -9,8 +9,9 @@ Support RAG Evaluator is an eval-driven RAG support assistant that answers from 
 - Grounded chat responses with citations and refusal behavior for unsupported questions.
 - Deterministic CI-safe LLM provider by default, with no API key required.
 - Optional Groq provider for local experimentation.
+- Optional token auth guard for API and dashboard demo protection.
 - Query logging for prompts, answers, retrieved chunks, citations, refusal status, latency, and evaluation metadata.
-- Persisted baseline eval runs with aggregate metrics and per-case results.
+- Persisted baseline eval runs with aggregate metrics, per-case results, and optional LLM-as-judge metadata.
 - Eval analytics dashboard with recent-run trend summaries.
 - Stable non-streaming chat plus streaming chat support.
 - Generated-style typed API client support for the web dashboard.
@@ -161,6 +162,26 @@ Troubleshooting:
 - Provider accidentally set in CI: leave `EMBEDDING_PROVIDER` unset or set it to `deterministic`; CI should not need external keys.
 - External provider unavailable: switch back to deterministic for local demos/CI, or retry once the provider is healthy.
 
+## Optional Auth Guard
+
+Auth is disabled by default so local development, Docker Compose demos, and CI behave without secrets. Before exposing the API or dashboard beyond a local demo, enable the simple token guard:
+
+| Variable | App | Notes |
+| --- | --- | --- |
+| `AUTH_ENABLED` | API | Defaults to `false`. Set to `true` to require a token for protected API routes. |
+| `API_AUTH_TOKEN` | API and web server proxy | Shared token used as `Authorization: Bearer <token>` or `x-api-key`. Store real values in local or managed secrets. |
+| `NEXT_PUBLIC_API_AUTH_TOKEN` | Web browser client | Optional local/demo fallback only. Because `NEXT_PUBLIC_*` values are visible in browser JavaScript, do not use this for real secrets. |
+
+When enabled, the guard protects operational routes such as chat, streaming chat, retrieval, ingestion, query logs, and evals. Public routes such as `GET /health` and Swagger docs at `GET /docs` remain public in the current implementation.
+
+This is simple API token protection, not OAuth, login, roles, sessions, or full user management.
+
+## Dashboard Auth Behavior
+
+The dashboard calls the API through its same-origin proxy. For non-demo deployments, set `API_AUTH_TOKEN` in the web runtime so the proxy can attach the bearer token server-side. If the API returns `401`, dashboard pages show a friendly authentication error instead of a generic request failure.
+
+When `AUTH_ENABLED=false`, the dashboard works as before and does not need any token.
+
 ## API Endpoint Summary
 
 - `GET /health` - API health check.
@@ -223,13 +244,31 @@ The project includes a persisted baseline eval workflow for checking RAG behavio
 
 The deterministic provider keeps evals repeatable and CI-safe. Groq can be enabled locally for experimentation, but it is optional and not required for the default demo or tests.
 
+### Optional LLM-As-Judge Mode
+
+Deterministic eval scoring remains the default. Optional LLM-as-judge scoring is controlled by `EVAL_JUDGE_PROVIDER`:
+
+| Variable | Notes |
+| --- | --- |
+| `EVAL_JUDGE_PROVIDER` | Defaults to `deterministic`. Set to `groq` only when you explicitly want Groq judge scoring. |
+| `GROQ_API_KEY` | Required only when `EVAL_JUDGE_PROVIDER=groq` or `LLM_PROVIDER=groq`. Store it in managed secrets or local env files. |
+| `GROQ_CHAT_MODEL` | Optional Groq model override for LLM and judge providers. |
+| `GROQ_BASE_URL` | Optional OpenAI-compatible Groq base URL override. |
+
+Judge prompts request strict JSON with score, pass/fail, reasoning, and dimensions for groundedness, answer correctness, citation support, and refusal behavior. Judge output is validated before persistence. Invalid or malformed judge output fails safely as a failed eval case with a clear judge failure reason. CI should leave judge mode deterministic and does not require `GROQ_API_KEY`.
+
 Recent eval runs are also summarized in the dashboard with total, passed, and failed cases plus refusal, citation, and answer-match accuracy trends. If there are no eval runs yet, run the baseline eval from the dashboard or call `POST /evals/run-baseline`.
 
 ## Troubleshooting
 
 - **API unavailable:** Check `http://localhost:3001/health`, confirm the API process or Compose service is running, and verify `NEXT_PUBLIC_API_BASE_URL` / `API_BASE_URL`.
+- **401 unauthorized:** If `AUTH_ENABLED=true`, send `Authorization: Bearer <token>` or `x-api-key` with the value from `API_AUTH_TOKEN`. Do not paste real tokens into issues, screenshots, or commits.
+- **Dashboard token missing:** Set `API_AUTH_TOKEN` in the web runtime so the dashboard proxy can attach the token server-side. Use `NEXT_PUBLIC_API_AUTH_TOKEN` only for local/demo cases where a browser-visible token is acceptable.
 - **Streaming unsupported or unavailable:** Use the dashboard fallback or call `POST /chat`. The deterministic provider is safe for local/CI streaming; provider-specific streaming behavior depends on local configuration and should remain optional.
 - **No eval runs yet:** Run the baseline eval from the dashboard or call `POST /evals/run-baseline`.
+- **Judge mode missing API key:** `GROQ_API_KEY` is required only when `EVAL_JUDGE_PROVIDER=groq`. Set `EVAL_JUDGE_PROVIDER=deterministic` for local/CI-safe runs.
+- **Invalid judge output:** Malformed judge JSON is treated as a failed eval case with judge reasoning that explains the validation failure.
+- **CI accidentally uses a real provider:** Keep `LLM_PROVIDER`, `EMBEDDING_PROVIDER`, and `EVAL_JUDGE_PROVIDER` unset or set to deterministic in CI unless secrets are intentionally configured for a separate non-default workflow.
 - **Generated client out of date:** Start the API locally, then run `cd apps/web && npm run generate:api-client` to validate the checked-in client against OpenAPI.
 
 ## CI and Quality Gates
@@ -253,5 +292,5 @@ GitHub Actions validate the full-stack repository without requiring external API
 - Roadmap and known limitations are documented in [docs/roadmap.md](docs/roadmap.md).
 - Deployment readiness notes are documented in [docs/deployment.md](docs/deployment.md).
 - Production deployment is not included.
-- Authentication is not implemented.
+- Optional token auth is implemented, but full user management is not.
 - Real API keys and local secrets should stay out of git.

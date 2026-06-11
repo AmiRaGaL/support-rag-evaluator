@@ -12,7 +12,12 @@ import {
   MetricCard,
   PageHeader,
 } from "@/components/ui";
-import { apiBaseUrl, getEvalRun, type EvalRun } from "@/lib/api-client";
+import {
+  apiBaseUrl,
+  getApiErrorMessage,
+  getEvalRun,
+  type EvalRun,
+} from "@/lib/api-client";
 import { formatDate, formatPercent } from "@/lib/formatters";
 
 export default function EvalRunDetailPage() {
@@ -32,9 +37,9 @@ export default function EvalRunDetailPage() {
           setRun(result);
           setError(null);
         }
-      } catch {
+      } catch (error) {
         if (isCurrent) {
-          setError("eval-run-detail-request-failed");
+          setError(getApiErrorMessage(error));
         }
       } finally {
         if (isCurrent) {
@@ -63,9 +68,7 @@ export default function EvalRunDetailPage() {
       ) : null}
       {error ? (
         <ErrorState title="Eval run detail is unavailable">
-          The dashboard could not load this eval run from{" "}
-          <code>{apiBaseUrl}</code>. Check the API base URL, then return to the
-          eval run list and try again.
+          {error} API base URL: <code>{apiBaseUrl}</code>.
         </ErrorState>
       ) : null}
 

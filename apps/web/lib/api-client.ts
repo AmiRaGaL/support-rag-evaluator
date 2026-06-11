@@ -12,6 +12,7 @@ export const apiBaseUrl =
 
 const generatedClient = new GeneratedApiClient({
   resolveUrl: buildApiUrl,
+  authToken: process.env.NEXT_PUBLIC_API_AUTH_TOKEN?.trim() || undefined,
 });
 
 export { ApiClientError };
@@ -30,6 +31,7 @@ export type QueryLogRetrievedChunk = ApiSchemas.QueryLogRetrievedChunk;
 export type QueryLog = ApiSchemas.QueryLog;
 export type EvalMetrics = ApiSchemas.EvalMetrics;
 export type EvalScore = ApiSchemas.EvalScore;
+export type EvalJudgeResult = ApiSchemas.EvalJudgeResult;
 export type EvalCaseType = ApiSchemas.EvalCaseType;
 export type BaselineEvalCaseResult = ApiSchemas.BaselineEvalCaseResult;
 export type BaselineEvalRun = ApiSchemas.BaselineEvalRun;
@@ -84,6 +86,18 @@ export function listEvalRuns(options?: ListOptions) {
 
 export function getEvalRun(id: string) {
   return generatedClient.getEvalRun(id);
+}
+
+export function getApiErrorMessage(error: unknown): string {
+  if (error instanceof ApiClientError && error.status === 401) {
+    return "The API rejected the request because authentication is enabled. Configure API_AUTH_TOKEN on the dashboard proxy, or NEXT_PUBLIC_API_AUTH_TOKEN for local demo mode.";
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "The API request did not complete.";
 }
 
 function buildApiUrl(path: string) {

@@ -107,6 +107,21 @@ export interface EvalScore {
   answerMatch: boolean;
 }
 
+export interface EvalJudgeDimensions {
+  groundedness: boolean;
+  answerCorrectness: boolean;
+  citationSupport: boolean;
+  refusalBehavior: boolean;
+}
+
+export interface EvalJudgeResult {
+  provider: string;
+  score: number;
+  passed: boolean;
+  reasoning: string;
+  dimensions: EvalJudgeDimensions;
+}
+
 export type EvalCaseType = "supported" | "unsupported";
 
 export interface BaselineEvalCaseResult {
@@ -118,11 +133,13 @@ export interface BaselineEvalCaseResult {
   response: ChatResponse;
   actualConfidence: number;
   score: EvalScore;
+  judge?: EvalJudgeResult;
 }
 
 export interface BaselineEvalRun {
   evalRunId: string;
   dataset: string;
+  judgeProvider: string;
   metrics: EvalMetrics;
   results: BaselineEvalCaseResult[];
 }
@@ -141,6 +158,11 @@ export interface PersistedEvalCaseResult {
   refusalCorrect: boolean;
   citationCorrect: boolean;
   answerMatch: boolean;
+  judgeProvider: string | null;
+  judgeScore: number | null;
+  judgePassed: boolean | null;
+  judgeReasoning: string | null;
+  judgeResult: EvalJudgeResult | null;
 }
 
 export interface EvalRun {
@@ -154,6 +176,7 @@ export interface EvalRun {
   citationAccuracy: number;
   answerMatchAccuracy: number;
   provider: string;
+  judgeProvider: string;
   createdAt: string;
   results: PersistedEvalCaseResult[];
 }
@@ -196,6 +219,7 @@ interface RequestOptions {
 export interface GeneratedApiClientOptions {
   resolveUrl: (path: string) => string;
   fetchImpl?: typeof fetch;
+  authToken?: string;
 }
 
 export class ApiClientError extends Error {
@@ -279,12 +303,7 @@ export class GeneratedApiClient {
     const response = await this.fetchImpl(this.options.resolveUrl(path), {
       method: options.method ?? "GET",
       cache: "no-store",
-      headers:
-        options.body === undefined
-          ? undefined
-          : {
-              "Content-Type": "application/json",
-            },
+      headers: this.buildHeaders(options),
       body:
         options.body === undefined ? undefined : JSON.stringify(options.body),
     });
@@ -303,12 +322,7 @@ export class GeneratedApiClient {
     const response = await this.fetchImpl(this.options.resolveUrl(path), {
       method: options.method ?? "GET",
       cache: "no-store",
-      headers:
-        options.body === undefined
-          ? undefined
-          : {
-              "Content-Type": "application/json",
-            },
+      headers: this.buildHeaders(options),
       body:
         options.body === undefined ? undefined : JSON.stringify(options.body),
     });
@@ -322,6 +336,20 @@ export class GeneratedApiClient {
     }
 
     yield* parseServerSentEvents<T>(response.body);
+  }
+
+  private buildHeaders(options: RequestOptions) {
+    const headers = new Headers();
+
+    if (options.body !== undefined) {
+      headers.set("Content-Type", "application/json");
+    }
+
+    if (this.options.authToken) {
+      headers.set("Authorization", `Bearer ${this.options.authToken}`);
+    }
+
+    return headers;
   }
 }
 

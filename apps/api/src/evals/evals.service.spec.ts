@@ -26,6 +26,7 @@ interface EvalRunCreateInput {
     citationAccuracy: number;
     answerMatchAccuracy: number;
     provider: string;
+    judgeProvider: string;
     caseResults: {
       create: unknown[];
     };
@@ -122,6 +123,7 @@ describe('EvalsService', () => {
     const result = await service.runBaseline();
 
     expect(result.evalRunId).toBe('eval_run_1');
+    expect(result.judgeProvider).toBe('deterministic');
     expect(result.metrics).toEqual({
       totalCases: 2,
       refusalAccuracy: 1,
@@ -149,6 +151,7 @@ describe('EvalsService', () => {
       citationAccuracy: 1,
       answerMatchAccuracy: 1,
       provider: 'deterministic',
+      judgeProvider: 'deterministic',
     });
     expect(createInput.data.caseResults.create).toHaveLength(2);
     expect(createInput.data.caseResults.create[0]).toMatchObject({
@@ -170,6 +173,9 @@ describe('EvalsService', () => {
       refusalCorrect: true,
       citationCorrect: true,
       answerMatch: true,
+      judgeProvider: 'deterministic',
+      judgeScore: 1,
+      judgePassed: true,
     });
     expect(createInput.data.caseResults.create[1]).toMatchObject({
       caseId: 'eval_unsupported',
@@ -182,6 +188,9 @@ describe('EvalsService', () => {
       refusalCorrect: true,
       citationCorrect: true,
       answerMatch: true,
+      judgeProvider: 'deterministic',
+      judgeScore: 1,
+      judgePassed: true,
     });
     expect(tx.evalRun.create).toHaveBeenCalledWith({
       data: createInput.data,

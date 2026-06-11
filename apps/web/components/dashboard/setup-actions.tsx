@@ -5,6 +5,7 @@ import { useState } from "react";
 import {
   apiBaseUrl,
   embedMissingChunks,
+  getApiErrorMessage,
   ingestSampleDocs,
   runBaselineEval,
 } from "@/lib/api-client";
@@ -79,12 +80,11 @@ export function SetupActions() {
         ...current,
         [actionId]: { error: null, success },
       }));
-    } catch {
+    } catch (error) {
       setActionState((current) => ({
         ...current,
         [actionId]: {
-          error:
-            "The action did not complete. Check that the API is running and the database is ready, then try again.",
+          error: getApiErrorMessage(error),
           success: null,
         },
       }));

@@ -16,6 +16,19 @@ export interface EvalScore {
   answerMatch: boolean;
 }
 
+export interface EvalJudgeResult {
+  provider: string;
+  score: number;
+  passed: boolean;
+  reasoning: string;
+  dimensions: {
+    groundedness: boolean;
+    answerCorrectness: boolean;
+    citationSupport: boolean;
+    refusalBehavior: boolean;
+  };
+}
+
 export interface EvalCaseResult {
   id: string;
   question: string;
@@ -25,6 +38,7 @@ export interface EvalCaseResult {
   response: ChatResponse;
   actualConfidence: number;
   score: EvalScore;
+  judge?: EvalJudgeResult;
 }
 
 export interface EvalAggregateMetrics {
@@ -38,6 +52,7 @@ export interface EvalAggregateMetrics {
 export interface BaselineEvalRunResult {
   evalRunId: string;
   dataset: string;
+  judgeProvider: string;
   metrics: EvalAggregateMetrics;
   results: EvalCaseResult[];
 }

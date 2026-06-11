@@ -114,6 +114,7 @@ export class EvalsController {
       citationAccuracy: run.citationAccuracy,
       answerMatchAccuracy: run.answerMatchAccuracy,
       provider: run.provider,
+      judgeProvider: run.judgeProvider,
       createdAt: run.createdAt,
       results: run.caseResults.map((result) => ({
         caseId: result.caseId,
@@ -129,6 +130,11 @@ export class EvalsController {
         refusalCorrect: result.refusalCorrect,
         citationCorrect: result.citationCorrect,
         answerMatch: result.answerMatch,
+        judgeProvider: result.judgeProvider,
+        judgeScore: result.judgeScore,
+        judgePassed: result.judgePassed,
+        judgeReasoning: result.judgeReasoning,
+        judgeResult: result.judgeResult,
       })),
     };
   }

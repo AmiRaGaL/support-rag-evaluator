@@ -12,6 +12,13 @@ export function setupSwagger(app: INestApplication): OpenAPIObject {
     .setTitle(OPENAPI_TITLE)
     .setDescription(OPENAPI_DESCRIPTION)
     .setVersion(OPENAPI_VERSION)
+    .addBearerAuth({
+      type: 'http',
+      scheme: 'bearer',
+      bearerFormat: 'API token',
+      description:
+        'Optional bearer token required when AUTH_ENABLED=true. The API also accepts the same token in the x-api-key header.',
+    })
     .build();
   const swaggerDocument = SwaggerModule.createDocument(app, swaggerConfig);
 
