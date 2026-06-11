@@ -81,6 +81,70 @@ curl "http://localhost:3001/query-logs?limit=10"
 curl -X POST http://localhost:3001/evals/run-baseline
 ```
 
+### Dashboard
+
+The lightweight Next.js dashboard lives in:
+
+```text
+apps/web
+```
+
+It is a portfolio-friendly scaffold for the support RAG workflow. The current
+dashboard includes:
+
+- Overview: API health and links into the main workflows.
+- Chat: a simple grounded question form with answer, citation, and retrieval
+  metadata.
+- Query Logs: recent chat logs and query detail views.
+- Eval Runs: recent baseline eval runs, run details, and a button to run the
+  baseline eval.
+
+The dashboard reads the upstream API URL from `NEXT_PUBLIC_API_BASE_URL`.
+Server-rendered dashboard checks use that URL directly, and browser-side
+dashboard requests use a same-origin Next.js proxy so local development does
+not require changing API CORS settings. For local development, create
+`apps/web/.env.local` or export:
+
+```bash
+NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
+```
+
+Run the API on `localhost:3001` and the web app on `localhost:3000`:
+
+```bash
+docker compose up -d postgres
+cd apps/api
+npm install
+npx prisma migrate dev
+npm run start:dev
+```
+
+In another terminal, prepare local sample data:
+
+```bash
+curl -X POST http://localhost:3001/ingestion/sample-docs
+curl -X POST http://localhost:3001/retrieval/embed-missing
+```
+
+Then start the dashboard:
+
+```bash
+cd apps/web
+npm install
+npm run dev
+```
+
+Open the dashboard at:
+
+```text
+http://localhost:3000
+```
+
+The deterministic provider is the default and does not require API keys. Groq
+is optional for local experimentation by setting `LLM_PROVIDER=groq` and the
+related Groq environment variables for the API; do not commit secrets or real
+API keys.
+
 ### API documentation
 
 Swagger UI is available at:
