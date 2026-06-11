@@ -1,4 +1,18 @@
 services:
+  web:
+    build:
+      context: ./apps/web
+      args:
+        NEXT_PUBLIC_API_BASE_URL: http://localhost:3001
+    container_name: support-rag-web
+    restart: unless-stopped
+    environment:
+      NEXT_PUBLIC_API_BASE_URL: http://api:3001
+    ports:
+      - "3000:3000"
+    depends_on:
+      - api
+
   api:
     build:
       context: ./apps/api
