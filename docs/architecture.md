@@ -1,28 +1,107 @@
 # Architecture
 
-## Goal
+Support RAG Evaluator is a full-stack, eval-driven support assistant. It is designed to show how a RAG product can stay grounded in support documentation, expose its behavior for inspection, and measure quality over time.
 
-Build an eval-driven RAG support assistant that can answer product-support questions using only indexed documentation.
+## System Components
 
-## High-level flow
+- **Next.js dashboard (`apps/web`)**: Browser UI for setup actions, grounded chat, query logs, and persisted eval runs.
+- **NestJS API (`apps/api`)**: Backend application that owns ingestion, retrieval, chat orchestration, logging, eval execution, OpenAPI docs, and database access.
+- **Ingestion module**: Reads bundled markdown support docs, extracts titles/source keys, chunks content, and upserts documents/chunks.
+- **Embeddings module**: Provides deterministic embeddings for local development, tests, and CI-safe retrieval behavior.
+- **Retrieval module**: Embeds queries, searches stored chunk vectors with pgvector, and returns ranked support-document chunks.
+- **Chat/RAG module**: Coordinates retrieval, grounded answer generation, citation metadata, refusal behavior, and query logging.
+- **LLM provider abstraction**: Selects a deterministic provider by default or an optional Groq provider when configured.
+- **Query logging**: Persists questions, answers, refusal state, provider, confidence, latency, retrieved chunks, and citation-use metadata.
+- **Eval runner**: Runs the baseline eval dataset through the same ingestion, embedding, retrieval, and chat path used by the API.
+- **Prisma/Postgres/pgvector**: Stores documents, chunks, embeddings, query logs, retrieved chunk records, eval runs, and eval case results.
+
+## Architecture Diagram
 
 ```text
-User question
-  -> API receives question
-  -> Query is embedded
-  -> Top-k chunks are retrieved from pgvector
-  -> Context is assembled
-  -> LLM generates grounded answer
-  -> Citation validator checks source support
-  -> Answer, citations, refusal flag, latency, and cost are logged
+User
+  |
+  v
+Next.js Dashboard (apps/web)
+  |
+  | HTTP / same-origin API proxy
+  v
+NestJS API (apps/api)
+  |
+  +--> Ingestion Module --------+
+  |                             |
+  +--> Embeddings Module -------+--> Prisma --> PostgreSQL + pgvector
+  |                             |       |
+  +--> Retrieval Module --------+       +--> Document / DocumentChunk
+  |                                     +--> RagQuery / RagRetrievedChunk
+  +--> Chat / RAG Module --------------+--> EvalRun / EvalCaseResult
+  |       |
+  |       +--> LLM Provider Abstraction
+  |              |
+  |              +--> Deterministic provider (default)
+  |              +--> Groq provider (optional)
+  |
+  +--> Query Logs
+  |
+  +--> Eval Runner
 ```
-## Main Components
 
-- Document ingestion service
-- Chunking service
-- Embedding provider interface
-- Vector retrieval service
-- Chat orchestration service
-- Citation validation service
-- Evaluation runner
-- Query logging service
+## Data Flows
+
+### Document Ingestion
+
+1. The dashboard or API caller sends `POST /ingestion/sample-docs`.
+2. The ingestion service reads markdown files from the bundled sample-docs dataset.
+3. Each file is normalized into a document record with a title, source key, source path, source type, and content hash.
+4. Markdown content is split into chunks with chunk indexes, content, token estimates, and metadata.
+5. The documents service upserts the `Document` and replaces its `DocumentChunk` rows so ingestion is repeatable.
+
+### Embedding Missing Chunks
+
+1. The dashboard or API caller sends `POST /retrieval/embed-missing`.
+2. The retrieval service finds `DocumentChunk` rows where `embedding IS NULL`.
+3. The embeddings service generates deterministic vectors for each missing chunk.
+4. The retrieval service stores vectors in the pgvector `embedding` column.
+5. The endpoint returns the count of chunks embedded.
+
+### Chat Request
+
+1. The dashboard or API caller sends `POST /chat` with a support question.
+2. The chat service trims and validates the question.
+3. The retrieval service embeds the question and searches pgvector for top matching chunks.
+4. The LLM service asks the configured provider to generate a grounded answer from retrieved chunks.
+5. If the provider cannot support the answer from retrieved context, the response is refused.
+6. Answered responses include citation objects that identify the chunks used as support.
+7. The chat service records the query log before returning the response.
+
+### Query Logging
+
+1. Chat requests are logged after answer generation.
+2. `RagQuery` stores the question, answer, refusal flag, provider name, confidence, retrieved chunk count, and latency.
+3. `RagRetrievedChunk` stores each retrieved chunk's document metadata, similarity score, and whether it was used as a citation.
+4. Logging is best-effort: a logging failure is recorded by the API logger and should not break the chat response.
+5. The dashboard reads logs through `GET /query-logs` and `GET /query-logs/:id`.
+
+### Baseline Eval Run
+
+1. The dashboard or API caller sends `POST /evals/run-baseline`.
+2. The eval service reads `datasets/evals/baseline.json`.
+3. The service ingests sample docs and embeds any missing chunks.
+4. Each eval case is sent through the same chat service used by normal requests.
+5. The scorer checks refusal behavior, citation correctness, and expected answer matching.
+6. Aggregate metrics and per-case results are persisted as `EvalRun` and `EvalCaseResult` rows.
+7. The dashboard reads eval history through `GET /evals/runs` and `GET /evals/runs/:id`.
+
+## Provider Design
+
+The API uses an LLM provider interface so answer generation can be swapped without changing the chat orchestration flow.
+
+- **Deterministic provider**: Default provider when `LLM_PROVIDER` is unset or set to `deterministic`. It builds predictable grounded answers from retrieved chunks, supports refusal behavior, and requires no external API key. This keeps local development, tests, and CI stable.
+- **Groq provider**: Optional provider when `LLM_PROVIDER=groq`. It uses Groq's OpenAI-compatible chat completions with `GROQ_API_KEY`, optional `GROQ_CHAT_MODEL`, and optional `GROQ_BASE_URL`. This is intended for local experimentation with real LLM responses and is not required for the default demo.
+
+Secrets should stay in local environment files or runtime configuration and should not be committed.
+
+## Why Query Logs And Evals Matter
+
+Query logs make the RAG system inspectable. They show what the user asked, what the assistant answered, which chunks were retrieved, which chunks became citations, whether the assistant refused, which provider ran, and how long the request took. That makes debugging grounding failures much easier than treating the model response as a black box.
+
+Eval runs make quality measurable. The baseline suite exercises supported and unsupported questions through the same application path as real chat requests, then stores metrics and per-case results. This helps recruiters and engineers see not only that the app works, but that it has a repeatable way to check retrieval quality, answer behavior, citation faithfulness, and refusal behavior as the project evolves.
