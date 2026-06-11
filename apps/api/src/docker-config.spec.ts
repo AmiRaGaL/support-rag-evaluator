@@ -6,6 +6,16 @@ const repoRoot = resolve(apiRoot, '..', '..');
 const dockerfilePath = resolve(apiRoot, 'Dockerfile');
 const dockerIgnorePath = resolve(apiRoot, '.dockerignore');
 const webDockerfilePath = resolve(repoRoot, 'apps', 'web', 'Dockerfile');
+const webApiRoutePath = resolve(
+  repoRoot,
+  'apps',
+  'web',
+  'app',
+  'api',
+  'backend',
+  '[...path]',
+  'route.ts',
+);
 const composePath = resolve(repoRoot, 'docker-compose.yml');
 
 function readText(path: string): string {
@@ -63,6 +73,7 @@ describe('Docker configuration', () => {
     );
     expect(dockerfile).toContain('RUN npm run build');
     expect(dockerfile).toContain('FROM base AS runtime');
+    expect(dockerfile).toContain('ENV API_BASE_URL=http://localhost:3001');
     expect(dockerfile).toContain('EXPOSE 3000');
     expect(dockerfile).toContain('CMD ["node", "server.js"]');
   });
@@ -89,9 +100,16 @@ describe('Docker configuration', () => {
 
     expect(web).toContain('context: ./apps/web');
     expect(web).toContain('NEXT_PUBLIC_API_BASE_URL: http://localhost:3001');
-    expect(web).toContain('NEXT_PUBLIC_API_BASE_URL: http://api:3001');
+    expect(web).toContain('API_BASE_URL: http://api:3001');
     expect(web).toContain('- "3000:3000"');
     expect(web).toContain('- api');
+  });
+
+  it('keeps the web proxy route on the runtime server API base URL', () => {
+    const route = readText(webApiRoutePath);
+
+    expect(route).toContain('getServerApiBaseUrl');
+    expect(route).not.toContain('apiBaseUrl');
   });
 
   it('keeps Postgres on host port 5433 while using container port 5432', () => {

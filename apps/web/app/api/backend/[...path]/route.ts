@@ -1,4 +1,4 @@
-import { apiBaseUrl } from "@/lib/api-client";
+import { getServerApiBaseUrl } from "@/lib/api-client";
 
 interface RouteContext {
   params: Promise<{
@@ -16,7 +16,7 @@ export async function POST(request: Request, context: RouteContext) {
 
 async function proxyRequest(request: Request, context: RouteContext) {
   const { path = [] } = await context.params;
-  const upstreamUrl = new URL(`/${path.join("/")}`, apiBaseUrl);
+  const upstreamUrl = new URL(`/${path.join("/")}`, getServerApiBaseUrl());
   const requestUrl = new URL(request.url);
 
   upstreamUrl.search = requestUrl.search;

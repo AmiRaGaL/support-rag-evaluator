@@ -62,6 +62,10 @@ Open the local demo:
 - API base URL: `http://localhost:3001`
 - Postgres host port: `5433` mapped to container port `5432`
 
+Compose sets the dashboard's browser-facing API URL to
+`NEXT_PUBLIC_API_BASE_URL=http://localhost:3001` and its server-side proxy URL
+to `API_BASE_URL=http://api:3001` inside the Docker network.
+
 Demo flow:
 
 1. Start Docker services with `docker compose up --build -d`.
@@ -98,13 +102,15 @@ dashboard includes:
   baseline eval.
 
 The dashboard reads the upstream API URL from `NEXT_PUBLIC_API_BASE_URL`.
-Server-rendered dashboard checks use that URL directly, and browser-side
-dashboard requests use a same-origin Next.js proxy so local development does
-not require changing API CORS settings. For local development, create
-`apps/web/.env.local` or export:
+Server-rendered dashboard checks can use `API_BASE_URL` when the API is only
+reachable through an internal Docker service name. Browser-side dashboard
+requests use a same-origin Next.js proxy so local development does not require
+changing API CORS settings. For local development, create `apps/web/.env.local`
+or export:
 
 ```bash
 NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
+API_BASE_URL=http://localhost:3001
 ```
 
 Run the API on `localhost:3001` and the web app on `localhost:3000`:

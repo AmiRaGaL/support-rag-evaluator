@@ -4,6 +4,10 @@ export const apiBaseUrl =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ??
   DEFAULT_API_BASE_URL;
 
+export function getServerApiBaseUrl() {
+  return process.env.API_BASE_URL?.replace(/\/$/, "") ?? apiBaseUrl;
+}
+
 export type ChatRefusalReason =
   | "empty_question"
   | "no_retrieved_chunks"
@@ -249,7 +253,7 @@ function buildApiUrl(path: string) {
     return `/api/backend${normalizedPath}`;
   }
 
-  return `${apiBaseUrl}${normalizedPath}`;
+  return `${getServerApiBaseUrl()}${normalizedPath}`;
 }
 
 function withLimit(path: string, limit?: number) {
