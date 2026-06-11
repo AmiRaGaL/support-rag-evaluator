@@ -160,37 +160,56 @@ export default function EvalRunsPage() {
         {runs.length > 0 ? (
           <div className="record-list">
             {runs.map((run) => (
-              <Card as="article" className="record-card" key={run.id}>
+              <Card
+                as="article"
+                className="record-card eval-run-card"
+                key={run.id}
+              >
                 <div className="record-card-header">
                   <div>
                     <h2>{run.name}</h2>
-                    <p>{formatDate(run.createdAt)}</p>
+                    <p>
+                      {formatDate(run.createdAt)} · {run.provider} ·{" "}
+                      {formatPassRate(run)} pass rate
+                    </p>
                   </div>
-                  <Badge tone="success">
-                    {run.passedCases}/{run.totalCases} passed
+                  <Badge tone={run.failedCases === 0 ? "success" : "danger"}>
+                    {run.failedCases === 0
+                      ? "all passed"
+                      : `${run.failedCases} failed`}
                   </Badge>
                 </div>
 
-                <dl className="metric-grid record-metrics">
-                  <MetricCard label="Total" value={run.totalCases} />
-                  <MetricCard label="Passed" value={run.passedCases} />
-                  <MetricCard label="Failed" value={run.failedCases} />
+                <div className="eval-status-strip" aria-hidden="true">
+                  <span
+                    style={{
+                      width: getPassRateWidth(run),
+                    }}
+                  />
+                </div>
+
+                <dl className="metric-grid eval-metrics">
+                  <MetricCard label="Total cases" value={run.totalCases} />
+                  <MetricCard label="Passed cases" value={run.passedCases} />
+                  <MetricCard label="Failed cases" value={run.failedCases} />
                   <MetricCard
-                    label="Refusal"
+                    label="Refusal accuracy"
                     value={formatPercent(run.refusalAccuracy)}
                   />
                   <MetricCard
-                    label="Citation"
+                    label="Citation accuracy"
                     value={formatPercent(run.citationAccuracy)}
                   />
                   <MetricCard
-                    label="Answer"
+                    label="Answer match"
                     value={formatPercent(run.answerMatchAccuracy)}
                   />
-                  <MetricCard label="Provider" value={run.provider} />
                 </dl>
 
-                <Link className="text-link" href={`/eval-runs/${run.id}`}>
+                <Link
+                  className="button button-secondary"
+                  href={`/eval-runs/${run.id}`}
+                >
                   View details
                 </Link>
               </Card>
@@ -200,4 +219,14 @@ export default function EvalRunsPage() {
       </Card>
     </div>
   );
+}
+
+function formatPassRate(run: EvalRun) {
+  return formatPercent(run.passedCases / Math.max(run.totalCases, 1));
+}
+
+function getPassRateWidth(run: EvalRun) {
+  return `${Math.round(
+    (run.passedCases / Math.max(run.totalCases, 1)) * 100,
+  )}%`;
 }

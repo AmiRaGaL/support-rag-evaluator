@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
+  Badge,
   Card,
   EmptyState,
   ErrorState,
@@ -81,46 +82,55 @@ export default function EvalRunDetailPage() {
           />
 
           <Card className="data-panel">
-            <dl className="metric-grid record-metrics">
-              <MetricCard label="Total" value={run.totalCases} />
-              <MetricCard label="Passed" value={run.passedCases} />
-              <MetricCard label="Failed" value={run.failedCases} />
+            <div className="eval-detail-summary">
+              <div>
+                <h2>Aggregate results</h2>
+                <p>
+                  {run.passedCases} of {run.totalCases} cases passed.{" "}
+                  {run.failedCases === 0
+                    ? "All checks passed for this run."
+                    : `${run.failedCases} cases need review.`}
+                </p>
+              </div>
+              <Badge tone={run.failedCases === 0 ? "success" : "danger"}>
+                {run.failedCases === 0
+                  ? "all passed"
+                  : `${run.failedCases} failed`}
+              </Badge>
+            </div>
+
+            <div className="eval-status-strip" aria-hidden="true">
+              <span
+                style={{
+                  width: getPassRateWidth(run),
+                }}
+              />
+            </div>
+
+            <dl className="metric-grid eval-metrics">
+              <MetricCard label="Total cases" value={run.totalCases} />
+              <MetricCard label="Passed cases" value={run.passedCases} />
+              <MetricCard label="Failed cases" value={run.failedCases} />
               <MetricCard
-                label="Refusal"
+                label="Refusal accuracy"
                 value={formatPercent(run.refusalAccuracy)}
               />
               <MetricCard
-                label="Citation"
+                label="Citation accuracy"
                 value={formatPercent(run.citationAccuracy)}
               />
               <MetricCard
-                label="Answer"
+                label="Answer match"
                 value={formatPercent(run.answerMatchAccuracy)}
               />
             </dl>
 
-            <section className="result-list">
+            <section className="result-list eval-case-list">
               <h2>Cases</h2>
               {run.results.length > 0 ? (
                 <div className="result-items">
                   {run.results.map((result) => (
-                    <Card
-                      as="article"
-                      className="result-item"
-                      key={result.caseId}
-                    >
-                      <div className="item-title">
-                        <strong>{result.question}</strong>
-                        <span>{result.passed ? "passed" : "failed"}</span>
-                      </div>
-                      <p>
-                        {result.type} · refusal{" "}
-                        {result.refusalCorrect ? "ok" : "failed"} · citation{" "}
-                        {result.citationCorrect ? "ok" : "failed"} · answer{" "}
-                        {result.answerMatch ? "ok" : "failed"}
-                      </p>
-                      <blockquote>{result.actualAnswer}</blockquote>
-                    </Card>
+                    <EvalCaseCard key={result.caseId} result={result} />
                   ))}
                 </div>
               ) : (
@@ -135,4 +145,89 @@ export default function EvalRunDetailPage() {
       ) : null}
     </div>
   );
+}
+
+function EvalCaseCard({
+  result,
+}: {
+  result: EvalRun["results"][number];
+}) {
+  return (
+    <Card
+      as="article"
+      className={
+        result.passed
+          ? "result-item eval-case-card"
+          : "result-item eval-case-card eval-case-card-failed"
+      }
+    >
+      <div className="eval-case-header">
+        <div>
+          <h3>{result.question}</h3>
+          <p>{result.type}</p>
+        </div>
+        <Badge tone={result.passed ? "success" : "danger"}>
+          {result.passed ? "passed" : "failed"}
+        </Badge>
+      </div>
+
+      <dl className="eval-checks">
+        <CheckItem label="Refusal" passed={result.refusalCorrect} />
+        <CheckItem label="Citation" passed={result.citationCorrect} />
+        <CheckItem label="Answer" passed={result.answerMatch} />
+      </dl>
+
+      <div className="eval-case-grid">
+        <section>
+          <h4>Expected</h4>
+          <p>{summarizeText(result.expectedAnswer)}</p>
+          <small>
+            Sources:{" "}
+            {result.expectedSources.length > 0
+              ? result.expectedSources.join(", ")
+              : "none expected"}
+          </small>
+        </section>
+        <section>
+          <h4>Actual</h4>
+          <p>{summarizeText(result.actualAnswer)}</p>
+          <small>
+            Refusal: {result.actualRefusal ? "yes" : "no"} · Confidence:{" "}
+            {result.actualConfidence === null
+              ? "not recorded"
+              : formatPercent(result.actualConfidence)}
+          </small>
+        </section>
+      </div>
+    </Card>
+  );
+}
+
+function CheckItem({ label, passed }: { label: string; passed: boolean }) {
+  return (
+    <div>
+      <dt>{label}</dt>
+      <dd>
+        <Badge tone={passed ? "success" : "danger"}>
+          {passed ? "correct" : "needs review"}
+        </Badge>
+      </dd>
+    </div>
+  );
+}
+
+function summarizeText(value: string) {
+  const normalized = value.trim();
+
+  if (normalized.length <= 220) {
+    return normalized;
+  }
+
+  return `${normalized.slice(0, 217)}...`;
+}
+
+function getPassRateWidth(run: EvalRun) {
+  return `${Math.round(
+    (run.passedCases / Math.max(run.totalCases, 1)) * 100,
+  )}%`;
 }

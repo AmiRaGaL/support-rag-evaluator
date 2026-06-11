@@ -326,6 +326,10 @@ h1 {
   grid-template-columns: repeat(4, minmax(0, 1fr));
 }
 
+.eval-metrics {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .metric-card {
   display: grid;
   gap: 8px;
@@ -779,6 +783,24 @@ h1 {
   padding: 18px;
 }
 
+.eval-run-card {
+  gap: 18px;
+}
+
+.eval-status-strip {
+  overflow: hidden;
+  height: 10px;
+  border-radius: 999px;
+  background: rgba(191, 107, 4, 0.16);
+}
+
+.eval-status-strip span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--success);
+}
+
 .record-card-header {
   display: flex;
   align-items: flex-start;
@@ -803,6 +825,121 @@ h1 {
 
 .record-card p {
   color: var(--muted);
+}
+
+.eval-detail-summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.eval-detail-summary div {
+  display: grid;
+  gap: 6px;
+}
+
+.eval-detail-summary h2,
+.eval-detail-summary p {
+  margin: 0;
+}
+
+.eval-detail-summary p {
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.eval-case-list h2 {
+  margin: 0;
+}
+
+.eval-case-card {
+  border-left: 4px solid var(--success);
+}
+
+.eval-case-card-failed {
+  border-left-color: var(--danger);
+}
+
+.eval-case-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.eval-case-header div {
+  display: grid;
+  gap: 6px;
+}
+
+.eval-case-header h3,
+.eval-case-header p,
+.eval-case-grid h4,
+.eval-case-grid p {
+  margin: 0;
+}
+
+.eval-case-header h3 {
+  font-size: 1rem;
+  line-height: 1.35;
+}
+
+.eval-case-header p {
+  color: var(--muted);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.eval-checks {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin: 0;
+}
+
+.eval-checks div {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 10px;
+}
+
+.eval-checks dt {
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.eval-checks dd {
+  margin: 6px 0 0;
+}
+
+.eval-case-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.eval-case-grid section {
+  display: grid;
+  gap: 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 12px;
+}
+
+.eval-case-grid h4 {
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.eval-case-grid small {
+  color: var(--muted);
+  line-height: 1.45;
 }
 
 .text-link {
@@ -854,6 +991,9 @@ h1 {
   .compact-metrics,
   .chat-metrics,
   .metadata-row,
+  .eval-metrics,
+  .eval-checks,
+  .eval-case-grid,
   .record-metrics,
   .toolbar-panel {
     grid-template-columns: 1fr;
@@ -861,6 +1001,8 @@ h1 {
 
   .item-title,
   .result-header,
+  .eval-detail-summary,
+  .eval-case-header,
   .record-card-header {
     display: grid;
   }
