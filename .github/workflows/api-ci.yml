@@ -1,4 +1,4 @@
-name: API CI
+name: CI
 
 on:
   pull_request:
@@ -10,7 +10,7 @@ on:
 
 jobs:
   api:
-    name: API build and test
+    name: api
     runs-on: ubuntu-latest
 
     defaults:
@@ -19,6 +19,7 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://support_rag_user:support_rag_password@localhost:5432/support_rag_test?schema=public
+      LLM_PROVIDER: deterministic
       NODE_ENV: test
       PORT: 3001
 
@@ -65,3 +66,59 @@ jobs:
 
       - name: Build API
         run: npm run build
+
+  web:
+    name: web
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/web
+
+    env:
+      NEXT_PUBLIC_API_BASE_URL: http://localhost:3001
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run lint
+        run: npm run lint
+
+      - name: Build web
+        run: npm run build
+
+  docker-config:
+    name: docker-config
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: apps/api
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/api/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate Docker configuration
+        run: npx jest src/docker-config.spec.ts --runInBand
