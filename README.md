@@ -38,48 +38,46 @@ DATABASE_URL="postgresql://support_rag_user:support_rag_password@localhost:5433/
 
 Do not commit local `.env` files.
 
-### Dockerized API runtime
+### Full-Stack Docker Demo
 
-The API can also run through Docker Compose. The API is exposed on
-`localhost:3001`, and it connects to Postgres inside the Docker network at
-`postgres:5432`.
+Docker Compose can run the full local demo stack: Postgres with pgvector, the
+NestJS API, and the Next.js dashboard.
 
-Build and start the services:
+Start the services:
 
 ```bash
 docker compose up --build -d
 ```
 
-Run Prisma migrations explicitly:
+Run Prisma migrations explicitly after Postgres is healthy:
 
 ```bash
 docker compose --profile tools run --rm api-migrate
 ```
 
-Migrations are not run automatically when the API container starts. By default,
-the Compose API service uses `LLM_PROVIDER=deterministic`, which does not
-require API keys. To try Groq locally, set `LLM_PROVIDER=groq` and
-`GROQ_API_KEY` for the API environment.
+Open the local demo:
 
-Check the API health endpoint:
+- Web dashboard: `http://localhost:3000`
+- API docs: `http://localhost:3001/docs`
+- API base URL: `http://localhost:3001`
+- Postgres host port: `5433` mapped to container port `5432`
 
-```bash
-curl http://localhost:3001/health
-```
+Demo flow:
 
-Typical Dockerized local flow:
+1. Start Docker services with `docker compose up --build -d`.
+2. Run migrations with `docker compose --profile tools run --rm api-migrate`.
+3. Open the dashboard at `http://localhost:3000`.
+4. Click **Ingest sample docs** from the dashboard setup panel.
+5. Click **Embed missing chunks**.
+6. Ask a chat question, such as "Can I export billing history?"
+7. Inspect Query Logs for retrieval metadata, citations, latency, and refusal behavior.
+8. Run the baseline eval from Eval Runs or the dashboard setup panel.
 
-```bash
-docker compose up --build -d
-docker compose --profile tools run --rm api-migrate
-curl -X POST http://localhost:3001/ingestion/sample-docs
-curl -X POST http://localhost:3001/retrieval/embed-missing
-curl -X POST http://localhost:3001/chat \
-  -H "Content-Type: application/json" \
-  -d '{"question":"Can I export billing history?","limit":5}'
-curl "http://localhost:3001/query-logs?limit=10"
-curl -X POST http://localhost:3001/evals/run-baseline
-```
+Migrations are not run automatically when the API container starts. The Compose
+API service defaults to `LLM_PROVIDER=deterministic`, so no API key or
+`GROQ_API_KEY` is required for the demo. Groq is optional for local
+experimentation by setting `LLM_PROVIDER=groq` and providing a local
+`GROQ_API_KEY` in the API environment; do not commit real keys.
 
 ### Dashboard
 
