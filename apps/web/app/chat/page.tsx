@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, ReactNode, useState } from "react";
+import { FormEvent, useState } from "react";
 import {
   apiBaseUrl,
   listQueryLogs,
@@ -22,6 +22,12 @@ import {
 import { formatConfidence } from "@/lib/formatters";
 
 const DEFAULT_LIMIT = 5;
+const suggestedQuestions = [
+  "Can I export billing history?",
+  "How do I reset my password?",
+  "Can workspace owners change billing contacts?",
+  "What is your refund policy for annual plans?",
+];
 
 export default function ChatPage() {
   const [question, setQuestion] = useState("");
@@ -102,6 +108,22 @@ export default function ChatPage() {
             </Button>
           </div>
         </form>
+
+        <section className="suggested-questions" aria-label="Suggested questions">
+          <p className="eyebrow">Try a demo question</p>
+          <div>
+            {suggestedQuestions.map((suggestion) => (
+              <button
+                className="suggested-question"
+                key={suggestion}
+                onClick={() => setQuestion(suggestion)}
+                type="button"
+              >
+                {suggestion}
+              </button>
+            ))}
+          </div>
+        </section>
       </Card>
 
       {isLoading ? (
@@ -132,57 +154,59 @@ export default function ChatPage() {
       ) : null}
 
       {response ? (
-        <Card className="chat-result" aria-label="Chat response">
+        <Card
+          className={isRefusal ? "chat-result chat-result-refusal" : "chat-result"}
+          aria-label="Chat response"
+        >
           <div className="result-header">
             <div>
               <p className="eyebrow">Response</p>
-              <h2>{isRefusal ? "Refused" : "Answered"}</h2>
+              <h2>{isRefusal ? "Intentional refusal" : "Grounded answer"}</h2>
+              <p>{response.question}</p>
             </div>
             <Badge tone={isRefusal ? "warning" : "success"}>
               {isRefusal ? "refusal" : "grounded"}
             </Badge>
           </div>
 
-          <div className="answer-panel">
+          <div className={isRefusal ? "answer-panel refusal-panel" : "answer-panel"}>
+            <p className="answer-label">{isRefusal ? "Refusal" : "Answer"}</p>
             <p>{response.answer}</p>
           </div>
 
-          <dl className="metric-grid compact-metrics">
+          <dl className="metric-grid chat-metrics">
             <MetricCard
               label="Confidence"
               value={formatConfidence(queryLog?.confidence)}
             />
+            <MetricCard
+              label="Status"
+              value={isRefusal ? "Refused" : "Answered"}
+            />
+            <MetricCard label="Citations" value={response.citations.length} />
             <MetricCard
               label="Retrieved chunks"
               value={response.retrievedChunkCount}
             />
           </dl>
 
-          <ResultList
-            emptyText="This response was saved before matching query-log details were available, or retrieval returned no chunks. Ingest sample docs and run the embed-missing step if this keeps happening."
-            emptyTitle="No retrieved chunks to inspect"
-            items={retrievedChunks}
-            renderItem={(chunk, index) => (
-              <RetrievedChunkItem chunk={chunk} index={index} />
-            )}
-            title="Retrieved Chunks"
+          {isRefusal ? (
+            <EmptyState title="Unsupported request refused">
+              The assistant did not find enough support-document evidence to
+              answer. This is expected for out-of-scope demo questions.
+            </EmptyState>
+          ) : null}
+
+          <CitationList
+            citations={response.citations}
+            isRefusal={isRefusal}
           />
 
-          <ResultList
-            emptyText="Refusals and unsupported answers do not include citations. For supported questions, ingest sample docs and embed missing chunks so the assistant has source material to cite."
-            emptyTitle="No citations returned"
-            items={response.citations}
-            renderItem={(citation) => (
-              <>
-                <div className="item-title">
-                  <strong>{citation.documentTitle}</strong>
-                  <span>{citation.sourceKey}</span>
-                </div>
-                <p>Chunk {citation.chunkIndex}</p>
-                <blockquote>{citation.snippet}</blockquote>
-              </>
+          <RetrievedChunkList
+            citedChunkIds={new Set(
+              response.citations.map((citation) => citation.chunkId),
             )}
-            title="Citations"
+            chunks={retrievedChunks}
           />
         </Card>
       ) : null}
@@ -190,36 +214,92 @@ export default function ChatPage() {
   );
 }
 
-function ResultList<T>({
-  emptyText,
-  emptyTitle,
-  items,
-  renderItem,
-  title,
+function CitationList({
+  citations,
+  isRefusal,
 }: {
-  emptyText: string;
-  emptyTitle: string;
-  items: T[];
-  renderItem: (item: T, index: number) => ReactNode;
-  title: string;
+  citations: ChatResponse["citations"];
+  isRefusal: boolean;
 }) {
   return (
-    <section className="result-list">
-      <h3>{title}</h3>
-      {items.length > 0 ? (
+    <section className="result-list citation-list">
+      <div className="section-heading">
+        <h3>Citations</h3>
+        <Badge>{citations.length}</Badge>
+      </div>
+      {citations.length > 0 ? (
         <div className="result-items">
-          {items.map((item, index) => (
+          {citations.map((citation, index) => (
             <Card
               as="article"
-              className="result-item"
-              key={getItemKey(item, index)}
+              className="result-item citation-item"
+              key={`${citation.chunkId}-${index}`}
             >
-              {renderItem(item, index)}
+              <div className="item-title">
+                <strong>
+                  Citation {index + 1}: {citation.documentTitle}
+                </strong>
+                <span>{citation.sourceKey}</span>
+              </div>
+              <dl className="metadata-row">
+                <div>
+                  <dt>Source</dt>
+                  <dd>{citation.sourceKey}</dd>
+                </div>
+                <div>
+                  <dt>Chunk</dt>
+                  <dd>{citation.chunkIndex}</dd>
+                </div>
+                <div>
+                  <dt>Chunk ID</dt>
+                  <dd>{citation.chunkId}</dd>
+                </div>
+              </dl>
+              <blockquote>{citation.snippet}</blockquote>
             </Card>
           ))}
         </div>
       ) : (
-        <EmptyState title={emptyTitle}>{emptyText}</EmptyState>
+        <EmptyState title="No citations returned">
+          {isRefusal
+            ? "Refusals intentionally do not include citations because the assistant did not have enough retrieved evidence to answer."
+            : "No citations came back with this answer. Ingest sample docs and embed missing chunks if this was expected to be supported."}
+        </EmptyState>
+      )}
+    </section>
+  );
+}
+
+function RetrievedChunkList({
+  chunks,
+  citedChunkIds,
+}: {
+  chunks: QueryLogRetrievedChunk[];
+  citedChunkIds: Set<string>;
+}) {
+  return (
+    <section className="result-list retrieved-list">
+      <div className="section-heading">
+        <h3>Retrieved Chunks</h3>
+        <Badge>{chunks.length}</Badge>
+      </div>
+      {chunks.length > 0 ? (
+        <div className="result-items">
+          {chunks.map((chunk, index) => (
+            <RetrievedChunkItem
+              chunk={chunk}
+              index={index}
+              isCited={chunk.citationUsed || citedChunkIds.has(chunk.chunkId)}
+              key={chunk.chunkId}
+            />
+          ))}
+        </div>
+      ) : (
+        <EmptyState title="No retrieved chunks to inspect">
+          This response was saved before matching query-log details were
+          available, or retrieval returned no chunks. Ingest sample docs and run
+          the embed-missing step if this keeps happening.
+        </EmptyState>
       )}
     </section>
   );
@@ -228,40 +308,41 @@ function ResultList<T>({
 function RetrievedChunkItem({
   chunk,
   index,
+  isCited,
 }: {
   chunk: QueryLogRetrievedChunk;
   index: number;
+  isCited: boolean;
 }) {
   return (
-    <>
+    <Card
+      as="article"
+      className={isCited ? "result-item chunk-item chunk-item-cited" : "result-item chunk-item"}
+    >
       <div className="item-title">
-        <strong>{chunk.documentTitle}</strong>
-        <span>{chunk.sourceKey}</span>
+        <strong>
+          Retrieved chunk {index + 1}: {chunk.documentTitle}
+        </strong>
+        <Badge tone={isCited ? "success" : "default"}>
+          {isCited ? "cited" : "not cited"}
+        </Badge>
       </div>
-      <p>
-        Chunk {chunk.chunkIndex} · Similarity {chunk.similarity.toFixed(3)} ·{" "}
-        {chunk.citationUsed ? "Cited" : "Not cited"}
-      </p>
-      <blockquote>{`Retrieved chunk ${index + 1}`}</blockquote>
-    </>
+      <dl className="metadata-row">
+        <div>
+          <dt>Source</dt>
+          <dd>{chunk.sourceKey}</dd>
+        </div>
+        <div>
+          <dt>Chunk</dt>
+          <dd>{chunk.chunkIndex}</dd>
+        </div>
+        <div>
+          <dt>Similarity</dt>
+          <dd>{chunk.similarity.toFixed(3)}</dd>
+        </div>
+      </dl>
+    </Card>
   );
-}
-
-function getItemKey(item: unknown, index: number) {
-  if (typeof item === "object" && item !== null) {
-    const maybeId =
-      "chunkId" in item
-        ? item.chunkId
-        : "id" in item
-          ? item.id
-          : undefined;
-
-    if (typeof maybeId === "string") {
-      return maybeId;
-    }
-  }
-
-  return String(index);
 }
 
 async function findMatchingQueryLog(response: ChatResponse) {
