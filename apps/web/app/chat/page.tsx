@@ -5,6 +5,8 @@ import {
   apiBaseUrl,
   listQueryLogs,
   sendChatMessage,
+  streamChatMessage,
+  type ChatStreamCompleteEvent,
   type ChatResponse,
   type QueryLog,
   type QueryLogRetrievedChunk,
@@ -33,6 +35,9 @@ export default function ChatPage() {
   const [question, setQuestion] = useState("");
   const [limit, setLimit] = useState(DEFAULT_LIMIT);
   const [response, setResponse] = useState<ChatResponse | null>(null);
+  const [streamedAnswer, setStreamedAnswer] = useState("");
+  const [streamComplete, setStreamComplete] =
+    useState<ChatStreamCompleteEvent | null>(null);
   const [queryLog, setQueryLog] = useState<QueryLog | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -45,14 +50,60 @@ export default function ChatPage() {
     if (!trimmedQuestion) {
       setError("empty-question");
       setResponse(null);
+      setStreamedAnswer("");
+      setStreamComplete(null);
       setQueryLog(null);
       return;
     }
 
     setIsLoading(true);
     setError(null);
+    setResponse(null);
+    setStreamedAnswer("");
+    setStreamComplete(null);
+    setQueryLog(null);
 
     try {
+      await sendStreamingChatMessage({
+        question: trimmedQuestion,
+        limit,
+      });
+    } catch {
+      await sendFallbackChatMessage(trimmedQuestion);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  const isRefusal = response?.status === "refused";
+  const retrievedChunks =
+    streamComplete?.retrievedChunks ?? queryLog?.retrievedChunks ?? [];
+  const confidence = streamComplete?.confidence ?? queryLog?.confidence ?? null;
+
+  async function sendStreamingChatMessage(input: {
+    question: string;
+    limit: number;
+  }) {
+    for await (const event of streamChatMessage(input)) {
+      if (event.type === "answer_delta") {
+        setStreamedAnswer((current) => `${current}${event.text}`);
+      }
+
+      if (event.type === "complete") {
+        setResponse(event.response);
+        setStreamComplete(event);
+      }
+
+      if (event.type === "error") {
+        throw new Error(event.message);
+      }
+    }
+  }
+
+  async function sendFallbackChatMessage(trimmedQuestion: string) {
+    try {
+      setStreamedAnswer("");
+      setStreamComplete(null);
       const result = await sendChatMessage({
         question: trimmedQuestion,
         limit,
@@ -64,13 +115,8 @@ export default function ChatPage() {
       setResponse(null);
       setQueryLog(null);
       setError("chat-request-failed");
-    } finally {
-      setIsLoading(false);
     }
   }
-
-  const isRefusal = response?.status === "refused";
-  const retrievedChunks = queryLog?.retrievedChunks ?? [];
 
   return (
     <div className="chat-page">
@@ -128,8 +174,8 @@ export default function ChatPage() {
 
       {isLoading ? (
         <LoadingState title="Retrieving support context">
-          Searching embedded docs, drafting a grounded answer, and checking for
-          citations before returning a response.
+          Searching embedded docs, drafting a grounded answer, and streaming
+          response text as soon as it is available.
         </LoadingState>
       ) : null}
 
@@ -151,6 +197,22 @@ export default function ChatPage() {
             </>
           )}
         </ErrorState>
+      ) : null}
+
+      {isLoading && streamedAnswer ? (
+        <Card className="chat-result" aria-label="Streaming chat response">
+          <div className="result-header">
+            <div>
+              <p className="eyebrow">Streaming response</p>
+              <h2>Drafting answer</h2>
+            </div>
+            <Badge>streaming</Badge>
+          </div>
+          <div className="answer-panel streaming-panel">
+            <p className="answer-label">Answer</p>
+            <p className="streaming-cursor">{streamedAnswer}</p>
+          </div>
+        </Card>
       ) : null}
 
       {response ? (
@@ -177,7 +239,7 @@ export default function ChatPage() {
           <dl className="metric-grid chat-metrics">
             <MetricCard
               label="Confidence"
-              value={formatConfidence(queryLog?.confidence)}
+              value={formatConfidence(confidence)}
             />
             <MetricCard
               label="Status"

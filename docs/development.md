@@ -68,6 +68,18 @@ NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
 API_BASE_URL=http://localhost:3001
 ```
 
+The dashboard API client is checked in at `apps/web/lib/api-client.generated.ts`.
+Refresh or validate it locally with:
+
+```bash
+npm run generate:api-client
+```
+
+When the API is running, the script validates the expected dashboard paths
+against the OpenAPI document at `http://localhost:3001/docs-json`. If the API is
+not running, it keeps the checked-in generated-style client unchanged so CI
+remains deterministic and does not need external API keys.
+
 ## Docker Compose
 
 Run the full demo from the repository root:

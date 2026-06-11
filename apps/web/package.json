@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "generate:api-client": "node scripts/generate-api-client.mjs",
     "lint": "eslint ."
   },
   "dependencies": {

@@ -41,3 +41,25 @@ export interface ChatRefusalResponse {
 }
 
 export type ChatResponse = ChatAnswerResponse | ChatRefusalResponse;
+
+export interface ChatStreamRetrievedChunk {
+  chunkId: string;
+  documentId: string;
+  documentTitle: string;
+  sourceKey: string;
+  chunkIndex: number;
+  similarity: number;
+  citationUsed: boolean;
+}
+
+export type ChatStreamEvent =
+  | {
+      type: 'answer_delta';
+      text: string;
+    }
+  | {
+      type: 'complete';
+      response: ChatResponse;
+      confidence: number;
+      retrievedChunks: ChatStreamRetrievedChunk[];
+    };

@@ -330,6 +330,10 @@ h1 {
   grid-template-columns: repeat(3, minmax(0, 1fr));
 }
 
+.eval-analytics-metrics {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
 .metric-card {
   display: grid;
   gap: 8px;
@@ -417,6 +421,7 @@ h1 {
 
 .chat-form-card,
 .chat-result,
+.analytics-panel,
 .data-panel,
 .toolbar-panel {
   display: grid;
@@ -668,6 +673,21 @@ h1 {
   color: var(--foreground);
 }
 
+.streaming-panel {
+  border-left-style: dashed;
+}
+
+.streaming-cursor::after {
+  content: "";
+  display: inline-block;
+  width: 8px;
+  height: 1em;
+  margin-left: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+  vertical-align: -2px;
+}
+
 .loading-state {
   align-items: flex-start;
   border-color: rgba(23, 126, 137, 0.18);
@@ -798,6 +818,74 @@ h1 {
   display: block;
   height: 100%;
   border-radius: inherit;
+  background: var(--success);
+}
+
+.trend-chart {
+  display: grid;
+  gap: 10px;
+}
+
+.trend-row {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(180px, 2fr) auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.trend-row div:first-child {
+  display: grid;
+  gap: 3px;
+}
+
+.trend-row span,
+.accuracy-sparkline .item-title span {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+.trend-track {
+  overflow: hidden;
+  height: 12px;
+  border-radius: 999px;
+  background: rgba(191, 107, 4, 0.16);
+}
+
+.trend-track span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--accent);
+}
+
+.accuracy-spark-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.accuracy-sparkline {
+  display: grid;
+  gap: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 14px;
+}
+
+.spark-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  height: 88px;
+  border-bottom: 1px solid var(--line);
+}
+
+.spark-bars span {
+  flex: 1 1 0;
+  min-width: 8px;
+  border-radius: 6px 6px 0 0;
   background: var(--success);
 }
 
@@ -992,10 +1080,16 @@ h1 {
   .chat-metrics,
   .metadata-row,
   .eval-metrics,
+  .eval-analytics-metrics,
   .eval-checks,
   .eval-case-grid,
+  .accuracy-spark-grid,
   .record-metrics,
   .toolbar-panel {
+    grid-template-columns: 1fr;
+  }
+
+  .trend-row {
     grid-template-columns: 1fr;
   }
 

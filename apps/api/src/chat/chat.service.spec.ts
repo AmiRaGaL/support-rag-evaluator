@@ -2,6 +2,7 @@ import { Logger } from '@nestjs/common';
 import { RetrievalService } from '../retrieval/retrieval.service';
 import { LlmService } from '../llm/llm.service';
 import { QueryLogsService } from '../query-logs/query-logs.service';
+import type { ChatStreamEvent } from './chat.types';
 import { ChatService } from './chat.service';
 
 describe('ChatService', () => {
@@ -230,5 +231,97 @@ describe('ChatService', () => {
       expect.any(String),
     );
     loggerSpy.mockRestore();
+  });
+
+  it('streams deterministic answer chunks and a final complete event', async () => {
+    const answer =
+      'According to the retrieved support documentation: billing exports are available in workspace billing settings.';
+    const chunks = [
+      {
+        id: 'chunk_1',
+        documentId: 'doc_1',
+        documentTitle: 'Billing',
+        sourceKey: 'billing',
+        sourcePath: '/docs/billing.md',
+        chunkIndex: 0,
+        content: 'Billing exports are available in workspace billing settings.',
+        tokenCount: null,
+        metadata: null,
+        distance: 0.2,
+        score: 0.8,
+      },
+    ];
+    retrievalService.searchChunks.mockResolvedValue({
+      query: 'billing exports',
+      limit: 4,
+      chunks,
+    });
+    llmService.generateGroundedAnswerWithMetadata.mockResolvedValue({
+      response: {
+        status: 'answered',
+        question: 'billing exports',
+        answer,
+        citations: [
+          {
+            chunkId: 'chunk_1',
+            documentId: 'doc_1',
+            documentTitle: 'Billing',
+            sourceKey: 'billing',
+            chunkIndex: 0,
+            snippet:
+              'Billing exports are available in workspace billing settings.',
+          },
+        ],
+        retrievedChunkCount: 1,
+      },
+      confidence: 0.7,
+    });
+    const service = new ChatService(
+      retrievalService as unknown as RetrievalService,
+      llmService as unknown as LlmService,
+      queryLogsService as unknown as QueryLogsService,
+    );
+
+    const events: ChatStreamEvent[] = [];
+
+    for await (const event of service.streamAnswerQuestion({
+      question: ' billing exports ',
+      limit: 4,
+    })) {
+      events.push(event);
+    }
+
+    expect(
+      events.filter((event) => event.type === 'answer_delta').length,
+    ).toBeGreaterThan(1);
+    expect(
+      events
+        .filter((event) => event.type === 'answer_delta')
+        .map((event) => event.text)
+        .join(''),
+    ).toBe(answer);
+
+    const completeEvent = events.at(-1);
+
+    expect(completeEvent?.type).toBe('complete');
+
+    if (completeEvent?.type !== 'complete') {
+      throw new Error('Expected final chat stream event to be complete.');
+    }
+
+    expect(completeEvent.response.status).toBe('answered');
+    expect(completeEvent.response.answer).toBe(answer);
+    expect(completeEvent.confidence).toBe(0.7);
+    expect(completeEvent.retrievedChunks).toEqual([
+      {
+        chunkId: 'chunk_1',
+        documentId: 'doc_1',
+        documentTitle: 'Billing',
+        sourceKey: 'billing',
+        chunkIndex: 0,
+        similarity: 0.8,
+        citationUsed: true,
+      },
+    ]);
   });
 });
