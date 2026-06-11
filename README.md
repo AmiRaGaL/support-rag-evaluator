@@ -39,6 +39,15 @@ User
 
 The API ingests markdown support docs, chunks and embeds them, retrieves relevant chunks with pgvector, builds grounded answers from retrieved context, attaches citations, logs each query, and stores eval run summaries/results. The dashboard provides a portfolio-friendly UI for exercising those flows.
 
+## Documentation
+
+- [Architecture](docs/architecture.md)
+- [Demo script](docs/demo-script.md)
+- [Screenshot checklist](docs/screenshots.md)
+- [Roadmap and limitations](docs/roadmap.md)
+- [Contributing](CONTRIBUTING.md)
+- [Development guide](docs/development.md)
+
 ## Local Quickstart
 
 Start Postgres:
@@ -164,6 +173,7 @@ The deterministic provider keeps evals repeatable and CI-safe. Groq can be enabl
 
 ## Notes
 
+- Roadmap and known limitations are documented in [docs/roadmap.md](docs/roadmap.md).
 - Production deployment is not included.
 - Authentication is not implemented.
 - Real API keys and local secrets should stay out of git.
