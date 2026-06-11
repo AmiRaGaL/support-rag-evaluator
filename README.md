@@ -207,7 +207,7 @@ If `http://localhost:3001/docs-json` is unavailable, the script keeps the checke
 
 `POST /chat` remains the stable non-streaming endpoint and keeps the existing response shape. Use it for simple integrations, tests, and fallback behavior.
 
-`POST /chat/stream` returns server-sent events. The deterministic provider streams a CI-safe fallback by chunking the final deterministic answer. When Groq is configured through `LLM_PROVIDER=groq` and local Groq credentials, the same streaming endpoint can be used without making Groq required for CI.
+`POST /chat/stream` returns server-sent events. The deterministic provider streams a CI-safe fallback by chunking the final deterministic answer. When Groq is configured through `LLM_PROVIDER=groq` and local Groq credentials, the same endpoint still works by chunking the final Groq answer; native Groq token streaming is not required for this phase.
 
 The stream sends incremental answer text and then a final completion event with the final chat response plus confidence and retrieved chunk metadata. Answered responses include citations; refusals include refusal metadata and no citations, matching the normal chat contract.
 

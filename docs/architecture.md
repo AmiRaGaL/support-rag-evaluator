@@ -82,7 +82,7 @@ NestJS API (apps/api)
 2. The API runs the same retrieval, answer-generation, refusal, citation, and query-log path used by `POST /chat`.
 3. The endpoint emits server-sent `answer_delta` events for incremental answer text.
 4. The deterministic provider uses a CI-safe fallback by chunking the final deterministic answer.
-5. When Groq is configured locally, the streaming endpoint can be used with the Groq provider without making Groq required for default development or CI.
+5. When Groq is configured locally, the streaming endpoint can be used with the Groq provider by chunking the final Groq answer; native Groq token streaming is not required for this phase.
 6. The stream ends with a `complete` event containing the final chat response, confidence, and retrieved chunk metadata. The dashboard uses that final event to show citations, refusal metadata, confidence, and retrieved chunks.
 7. If the dashboard cannot stream successfully, it falls back to the stable `POST /chat` endpoint.
 

@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "generate:api-client": "node scripts/generate-api-client.mjs",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "test:analytics": "node scripts/test-eval-analytics.mjs"
   },
   "dependencies": {
     "next": "^15.3.3",
