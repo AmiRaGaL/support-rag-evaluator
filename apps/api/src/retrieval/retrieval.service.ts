@@ -133,7 +133,7 @@ export class RetrievalService {
     const values = embedding.map((value) => {
       if (!Number.isFinite(value)) {
         throw new InternalServerErrorException(
-          'Embedding values must be finite numbers.',
+          `Embedding values must be finite numbers before writing to DocumentChunk.embedding vector(${EMBEDDING_DIMENSIONS}).`,
         );
       }
 
