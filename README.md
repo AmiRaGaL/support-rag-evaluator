@@ -119,14 +119,7 @@ npx prisma migrate dev
 npm run start:dev
 ```
 
-In another terminal, prepare local sample data:
-
-```bash
-curl -X POST http://localhost:3001/ingestion/sample-docs
-curl -X POST http://localhost:3001/retrieval/embed-missing
-```
-
-Then start the dashboard:
+Then start the dashboard in another terminal:
 
 ```bash
 cd apps/web
@@ -140,10 +133,41 @@ Open the dashboard at:
 http://localhost:3000
 ```
 
+#### Dashboard Demo Flow
+
+Use this sequence for a portfolio demo:
+
+1. Start Postgres and the API on `localhost:3001`.
+2. Run Prisma migrations with `npx prisma migrate dev`.
+3. Start the web dashboard on `localhost:3000`.
+4. From the Overview page, click **Ingest sample docs**.
+5. Click **Embed missing chunks**.
+6. Open Chat and ask a grounded question, such as "Can I export billing history?"
+7. Inspect Query Logs to review retrieval metadata, citations, latency, and refusal behavior.
+8. Return to Overview or Eval Runs and click **Run baseline eval**.
+9. Inspect Eval Runs for aggregate metrics and per-case results.
+
+The dashboard includes explicit setup actions, improved loading and empty
+states, readable answer/citation panels, query-log detail views, and eval-run
+detail views. Actions are user-triggered; the dashboard does not ingest docs,
+embed chunks, or run evals automatically on page load.
+
 The deterministic provider is the default and does not require API keys. Groq
 is optional for local experimentation by setting `LLM_PROVIDER=groq` and the
 related Groq environment variables for the API; do not commit secrets or real
 API keys.
+
+Common demo troubleshooting:
+
+- **API unavailable:** confirm the API is running on `localhost:3001`, `GET /health`
+  succeeds, and `NEXT_PUBLIC_API_BASE_URL` points to `http://localhost:3001`.
+- **Missing sample docs:** click **Ingest sample docs** from the Overview setup
+  panel, or run `POST /ingestion/sample-docs` manually.
+- **No query logs yet:** ask a chat question first. Supported questions need
+  ingested docs and embedded chunks to produce grounded answers with citations.
+- **No eval runs yet:** click **Run baseline eval**. The baseline runner uses
+  sample docs and deterministic embeddings by default, so `GROQ_API_KEY` is not
+  required.
 
 ### API documentation
 
