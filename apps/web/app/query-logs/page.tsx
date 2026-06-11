@@ -2,6 +2,15 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import {
+  Badge,
+  Card,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  MetricCard,
+  PageHeader,
+} from "@/components/ui";
 import { listQueryLogs, type QueryLog } from "@/lib/api-client";
 import { formatConfidence, formatDate } from "@/lib/formatters";
 
@@ -45,69 +54,54 @@ export default function QueryLogsPage() {
 
   return (
     <div className="dashboard-page">
-      <section className="intro">
-        <p className="eyebrow">Recent activity</p>
-        <h1>Query Logs</h1>
-        <p className="lede">
-          Inspect recent support questions, refusal behavior, provider metadata,
-          and response latency.
-        </p>
-      </section>
+      <PageHeader
+        description="Inspect recent support questions, refusal behavior, provider metadata, and response latency."
+        eyebrow="Recent activity"
+        title="Query Logs"
+      />
 
-      <section className="data-panel" aria-label="Recent query logs">
-        {isLoading ? <p className="empty-state">Loading query logs...</p> : null}
-        {error ? <p className="error-message">{error}</p> : null}
+      <Card className="data-panel" aria-label="Recent query logs">
+        {isLoading ? <LoadingState>Loading query logs...</LoadingState> : null}
+        {error ? <ErrorState>{error}</ErrorState> : null}
         {!isLoading && !error && logs.length === 0 ? (
-          <p className="empty-state">No query logs yet. Send a chat question first.</p>
+          <EmptyState>No query logs yet. Send a chat question first.</EmptyState>
         ) : null}
 
         {logs.length > 0 ? (
           <div className="record-list">
             {logs.map((log) => (
-              <article className="record-card" key={log.id}>
+              <Card as="article" className="record-card" key={log.id}>
                 <div className="record-card-header">
                   <div>
                     <h2>{log.question}</h2>
                     <p>{formatDate(log.createdAt)}</p>
                   </div>
-                  <span
-                    className={
-                      log.refusal
-                        ? "status-pill status-pill-warning"
-                        : "status-pill status-pill-ok"
-                    }
-                  >
+                  <Badge tone={log.refusal ? "warning" : "success"}>
                     {log.refusal ? "refused" : "answered"}
-                  </span>
+                  </Badge>
                 </div>
 
-                <dl className="record-metadata">
-                  <div>
-                    <dt>Confidence</dt>
-                    <dd>{formatConfidence(log.confidence)}</dd>
-                  </div>
-                  <div>
-                    <dt>Provider</dt>
-                    <dd>{log.provider}</dd>
-                  </div>
-                  <div>
-                    <dt>Latency</dt>
-                    <dd>{log.latencyMs}ms</dd>
-                  </div>
-                  <div>
-                    <dt>Retrieved</dt>
-                    <dd>{log.retrievedChunkCount}</dd>
-                  </div>
+                <dl className="metric-grid record-metrics">
+                  <MetricCard
+                    label="Confidence"
+                    value={formatConfidence(log.confidence)}
+                  />
+                  <MetricCard label="Provider" value={log.provider} />
+                  <MetricCard label="Latency" value={`${log.latencyMs}ms`} />
+                  <MetricCard
+                    label="Retrieved"
+                    value={log.retrievedChunkCount}
+                  />
                 </dl>
 
                 <Link className="text-link" href={`/query-logs/${log.id}`}>
                   View details
                 </Link>
-              </article>
+              </Card>
             ))}
           </div>
         ) : null}
-      </section>
+      </Card>
     </div>
   );
 }

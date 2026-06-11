@@ -8,6 +8,15 @@ import {
   type QueryLog,
   type QueryLogRetrievedChunk,
 } from "@/lib/api-client";
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  ErrorState,
+  MetricCard,
+  PageHeader,
+} from "@/components/ui";
 import { formatConfidence } from "@/lib/formatters";
 
 const DEFAULT_LIMIT = 5;
@@ -56,82 +65,74 @@ export default function ChatPage() {
     }
   }
 
-  const isRefusal =
-    response?.status === "refused";
+  const isRefusal = response?.status === "refused";
   const retrievedChunks = queryLog?.retrievedChunks ?? [];
 
   return (
     <div className="chat-page">
-      <section className="intro">
-        <p className="eyebrow">Grounded chat</p>
-        <h1>Chat</h1>
-        <p className="lede">
-          Ask a support question and inspect the answer, citations, and
-          retrieval details returned by the API.
-        </p>
-      </section>
+      <PageHeader
+        description="Ask a support question and inspect the answer, citations, and retrieval details returned by the API."
+        eyebrow="Grounded chat"
+        title="Chat"
+      />
 
-      <form className="chat-form" onSubmit={handleSubmit}>
-        <label htmlFor="question">Question</label>
-        <textarea
-          id="question"
-          name="question"
-          onChange={(event) => setQuestion(event.target.value)}
-          placeholder="Can I export billing history?"
-          rows={5}
-          value={question}
-        />
-
-        <div className="form-row">
-          <label htmlFor="limit">Retrieval limit</label>
-          <input
-            id="limit"
-            max={20}
-            min={1}
-            name="limit"
-            onChange={(event) => setLimit(Number(event.target.value))}
-            type="number"
-            value={limit}
+      <Card as="div" className="chat-form-card">
+        <form className="chat-form" onSubmit={handleSubmit}>
+          <label htmlFor="question">Question</label>
+          <textarea
+            id="question"
+            name="question"
+            onChange={(event) => setQuestion(event.target.value)}
+            placeholder="Can I export billing history?"
+            rows={5}
+            value={question}
           />
-          <button disabled={isLoading} type="submit">
-            {isLoading ? "Sending..." : "Send"}
-          </button>
-        </div>
-      </form>
 
-      {error ? <p className="error-message">{error}</p> : null}
+          <div className="form-row">
+            <label htmlFor="limit">Retrieval limit</label>
+            <input
+              id="limit"
+              max={20}
+              min={1}
+              name="limit"
+              onChange={(event) => setLimit(Number(event.target.value))}
+              type="number"
+              value={limit}
+            />
+            <Button disabled={isLoading} type="submit">
+              {isLoading ? "Sending..." : "Send"}
+            </Button>
+          </div>
+        </form>
+      </Card>
+
+      {error ? <ErrorState>{error}</ErrorState> : null}
 
       {response ? (
-        <section className="chat-result" aria-label="Chat response">
+        <Card className="chat-result" aria-label="Chat response">
           <div className="result-header">
             <div>
               <p className="eyebrow">Response</p>
               <h2>{isRefusal ? "Refused" : "Answered"}</h2>
             </div>
-            <span
-              className={
-                isRefusal
-                  ? "status-pill status-pill-warning"
-                  : "status-pill status-pill-ok"
-              }
-            >
+            <Badge tone={isRefusal ? "warning" : "success"}>
               {isRefusal ? "refusal" : "grounded"}
-            </span>
+            </Badge>
           </div>
 
           <div className="answer-panel">
             <p>{response.answer}</p>
           </div>
 
-          <dl className="response-metadata">
-            <div>
-              <dt>Confidence</dt>
-              <dd>{formatConfidence(queryLog?.confidence)}</dd>
-            </div>
-            <div>
-              <dt>Retrieved chunks</dt>
-              <dd>{response.retrievedChunkCount}</dd>
-            </div>
+          <dl className="metric-grid compact-metrics">
+            <MetricCard
+              label="Confidence"
+              value={formatConfidence(queryLog?.confidence)}
+            />
+            <MetricCard
+              label="Retrieved chunks"
+              value={response.retrievedChunkCount}
+            />
           </dl>
 
           <ResultList
@@ -158,7 +159,7 @@ export default function ChatPage() {
             )}
             title="Citations"
           />
-        </section>
+        </Card>
       ) : null}
     </div>
   );
@@ -181,13 +182,17 @@ function ResultList<T>({
       {items.length > 0 ? (
         <div className="result-items">
           {items.map((item, index) => (
-            <article className="result-item" key={getItemKey(item, index)}>
+            <Card
+              as="article"
+              className="result-item"
+              key={getItemKey(item, index)}
+            >
               {renderItem(item, index)}
-            </article>
+            </Card>
           ))}
         </div>
       ) : (
-        <p className="empty-state">{emptyText}</p>
+        <EmptyState>{emptyText}</EmptyState>
       )}
     </section>
   );

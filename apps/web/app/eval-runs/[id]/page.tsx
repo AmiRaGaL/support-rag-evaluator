@@ -3,6 +3,14 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import {
+  Card,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  MetricCard,
+  PageHeader,
+} from "@/components/ui";
 import { getEvalRun, type EvalRun } from "@/lib/api-client";
 import { formatDate, formatPercent } from "@/lib/formatters";
 
@@ -51,45 +59,38 @@ export default function EvalRunDetailPage() {
         Back to eval runs
       </Link>
 
-      {isLoading ? <p className="empty-state">Loading eval run...</p> : null}
-      {error ? <p className="error-message">{error}</p> : null}
+      {isLoading ? <LoadingState>Loading eval run...</LoadingState> : null}
+      {error ? <ErrorState>{error}</ErrorState> : null}
 
       {run ? (
         <>
-          <section className="intro">
-            <p className="eyebrow">Eval detail</p>
-            <h1>{run.name}</h1>
-            <p className="lede">
-              {run.provider} · {formatDate(run.createdAt)}
-            </p>
-          </section>
+          <PageHeader
+            description={
+              <>
+                {run.provider} · {formatDate(run.createdAt)}
+              </>
+            }
+            eyebrow="Eval detail"
+            title={run.name}
+          />
 
-          <section className="data-panel">
-            <dl className="record-metadata">
-              <div>
-                <dt>Total</dt>
-                <dd>{run.totalCases}</dd>
-              </div>
-              <div>
-                <dt>Passed</dt>
-                <dd>{run.passedCases}</dd>
-              </div>
-              <div>
-                <dt>Failed</dt>
-                <dd>{run.failedCases}</dd>
-              </div>
-              <div>
-                <dt>Refusal</dt>
-                <dd>{formatPercent(run.refusalAccuracy)}</dd>
-              </div>
-              <div>
-                <dt>Citation</dt>
-                <dd>{formatPercent(run.citationAccuracy)}</dd>
-              </div>
-              <div>
-                <dt>Answer</dt>
-                <dd>{formatPercent(run.answerMatchAccuracy)}</dd>
-              </div>
+          <Card className="data-panel">
+            <dl className="metric-grid record-metrics">
+              <MetricCard label="Total" value={run.totalCases} />
+              <MetricCard label="Passed" value={run.passedCases} />
+              <MetricCard label="Failed" value={run.failedCases} />
+              <MetricCard
+                label="Refusal"
+                value={formatPercent(run.refusalAccuracy)}
+              />
+              <MetricCard
+                label="Citation"
+                value={formatPercent(run.citationAccuracy)}
+              />
+              <MetricCard
+                label="Answer"
+                value={formatPercent(run.answerMatchAccuracy)}
+              />
             </dl>
 
             <section className="result-list">
@@ -97,7 +98,11 @@ export default function EvalRunDetailPage() {
               {run.results.length > 0 ? (
                 <div className="result-items">
                   {run.results.map((result) => (
-                    <article className="result-item" key={result.caseId}>
+                    <Card
+                      as="article"
+                      className="result-item"
+                      key={result.caseId}
+                    >
                       <div className="item-title">
                         <strong>{result.question}</strong>
                         <span>{result.passed ? "passed" : "failed"}</span>
@@ -109,14 +114,14 @@ export default function EvalRunDetailPage() {
                         {result.answerMatch ? "ok" : "failed"}
                       </p>
                       <blockquote>{result.actualAnswer}</blockquote>
-                    </article>
+                    </Card>
                   ))}
                 </div>
               ) : (
-                <p className="empty-state">No case results recorded.</p>
+                <EmptyState>No case results recorded.</EmptyState>
               )}
             </section>
-          </section>
+          </Card>
         </>
       ) : null}
     </div>

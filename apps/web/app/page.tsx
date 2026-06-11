@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Badge, Card, MetricCard, PageHeader } from "@/components/ui";
 import { apiBaseUrl, getHealth, type HealthResponse } from "@/lib/api-client";
 
 export const dynamic = "force-dynamic";
@@ -36,13 +37,13 @@ export default async function Home() {
 
   return (
     <div className="home">
-      <section className="intro">
-        <p className="eyebrow">Overview dashboard</p>
-        <h1>Support RAG Evaluator</h1>
-        <p className="lede">Eval-driven RAG support assistant</p>
-      </section>
+      <PageHeader
+        description="Eval-driven RAG support assistant"
+        eyebrow="Overview dashboard"
+        title="Support RAG Evaluator"
+      />
 
-      <section className="health-panel" aria-label="API health">
+      <Card className="health-panel" aria-label="API health">
         <div>
           <p className="eyebrow">API health</p>
           <h2>{health.connected ? "Connected" : "Disconnected"}</h2>
@@ -52,39 +53,23 @@ export default async function Home() {
               : health.message}
           </p>
         </div>
-        <span
-          className={
-            health.connected ? "status-pill status-pill-ok" : "status-pill"
-          }
-        >
+        <Badge tone={health.connected ? "success" : "danger"}>
           {health.connected ? health.data.database : "offline"}
-        </span>
-      </section>
+        </Badge>
+      </Card>
 
-      <section className="status-strip" aria-label="Dashboard signals">
-        <div>
-          <span className="metric-label">Grounding</span>
-          <strong>Docs only</strong>
-        </div>
-        <div>
-          <span className="metric-label">Evidence</span>
-          <strong>Citations</strong>
-        </div>
-        <div>
-          <span className="metric-label">Unsupported</span>
-          <strong>Refusals</strong>
-        </div>
-        <div>
-          <span className="metric-label">API</span>
-          <strong>{apiBaseUrl}</strong>
-        </div>
-      </section>
+      <dl className="metric-grid overview-metrics" aria-label="Dashboard signals">
+        <MetricCard label="Grounding" value="Docs only" />
+        <MetricCard label="Evidence" value="Citations" />
+        <MetricCard label="Unsupported" value="Refusals" />
+        <MetricCard label="API" value={apiBaseUrl} />
+      </dl>
 
       <section className="link-grid" aria-label="Dashboard sections">
         {dashboardSections.map((section) =>
           section.external ? (
             <a
-              className="section-card"
+              className="card section-card"
               href={section.href}
               key={section.title}
               rel="noreferrer"
@@ -94,7 +79,11 @@ export default async function Home() {
               <p>{section.description}</p>
             </a>
           ) : (
-            <Link className="section-card" href={section.href} key={section.title}>
+            <Link
+              className="card section-card"
+              href={section.href}
+              key={section.title}
+            >
               <span>{section.title}</span>
               <p>{section.description}</p>
             </Link>

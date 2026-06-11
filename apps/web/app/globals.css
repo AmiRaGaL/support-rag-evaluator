@@ -111,7 +111,7 @@ a {
   max-width: 1080px;
 }
 
-.intro {
+.page-header {
   display: grid;
   gap: 12px;
   max-width: 760px;
@@ -140,15 +140,18 @@ h1 {
   line-height: 1.45;
 }
 
+.card {
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: var(--shadow);
+}
+
 .health-panel {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
   gap: 24px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
-  box-shadow: var(--shadow);
   padding: 24px;
 }
 
@@ -168,48 +171,78 @@ h1 {
   line-height: 1.5;
 }
 
-.status-pill {
+.badge {
+  align-items: center;
+  display: inline-flex;
   flex: 0 0 auto;
-  border: 1px solid rgba(180, 35, 24, 0.22);
+  border: 1px solid rgba(23, 126, 137, 0.22);
   border-radius: 999px;
-  background: rgba(180, 35, 24, 0.08);
-  color: var(--danger);
+  background: var(--surface);
+  color: var(--accent-strong);
   font-size: 0.82rem;
   font-weight: 800;
+  line-height: 1;
   padding: 8px 12px;
   text-transform: uppercase;
 }
 
-.status-pill-ok {
+.badge-success {
   border-color: rgba(22, 131, 74, 0.22);
   background: rgba(22, 131, 74, 0.08);
   color: var(--success);
 }
 
-.status-strip {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
-  box-shadow: var(--shadow);
+.badge-warning {
+  border-color: rgba(191, 107, 4, 0.24);
+  background: rgba(191, 107, 4, 0.1);
+  color: var(--warning);
 }
 
-.status-strip div {
+.badge-danger {
+  border-color: rgba(180, 35, 24, 0.22);
+  background: rgba(180, 35, 24, 0.08);
+  color: var(--danger);
+}
+
+.metric-grid {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+}
+
+.overview-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.compact-metrics {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.record-metrics {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.metric-card {
   display: grid;
   gap: 8px;
   min-width: 0;
-  border-right: 1px solid var(--line);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
   padding: 20px;
 }
 
-.status-strip div:last-child {
-  border-right: 0;
+.metric-card dd {
+  margin: 0;
+  font-weight: 800;
+  overflow-wrap: anywhere;
 }
 
-.status-strip strong {
-  overflow-wrap: anywhere;
+.metric-card dt {
+  color: var(--accent-strong);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
 }
 
 .link-grid {
@@ -223,9 +256,6 @@ h1 {
   min-height: 156px;
   align-content: start;
   gap: 14px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
   padding: 22px;
 }
 
@@ -277,17 +307,18 @@ h1 {
   max-width: 1180px;
 }
 
-.chat-form,
+.chat-form-card,
 .chat-result,
 .data-panel,
 .toolbar-panel {
   display: grid;
   gap: 18px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  background: var(--panel);
-  box-shadow: var(--shadow);
   padding: 24px;
+}
+
+.chat-form {
+  display: grid;
+  gap: 18px;
 }
 
 .toolbar-panel {
@@ -340,8 +371,7 @@ h1 {
   gap: 12px;
 }
 
-.form-row button,
-.toolbar-panel button {
+.button {
   justify-self: start;
   border: 0;
   border-radius: 8px;
@@ -354,19 +384,22 @@ h1 {
   padding: 0 18px;
 }
 
-.form-row button:disabled,
-.toolbar-panel button:disabled {
+.button:disabled {
   cursor: wait;
   opacity: 0.72;
 }
 
-.error-message {
+.state-message {
+  margin: 0;
+  line-height: 1.55;
+}
+
+.error-state {
   border: 1px solid rgba(180, 35, 24, 0.24);
   border-radius: 8px;
   background: rgba(180, 35, 24, 0.08);
   color: var(--danger);
   font-weight: 700;
-  margin: 0;
   padding: 14px 16px;
 }
 
@@ -397,12 +430,6 @@ h1 {
   margin: 0;
 }
 
-.status-pill-warning {
-  border-color: rgba(191, 107, 4, 0.24);
-  background: rgba(191, 107, 4, 0.1);
-  color: var(--warning);
-}
-
 .answer-panel {
   border-left: 4px solid var(--accent);
   background: var(--surface);
@@ -411,36 +438,11 @@ h1 {
 
 .answer-panel p,
 .empty-state,
+.loading-state,
 .result-item p {
   margin: 0;
   color: var(--muted);
   line-height: 1.55;
-}
-
-.response-metadata {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-  margin: 0;
-}
-
-.response-metadata div {
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 14px;
-}
-
-.response-metadata dt {
-  color: var(--muted);
-  font-size: 0.82rem;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.response-metadata dd {
-  margin: 6px 0 0;
-  font-size: 1.2rem;
-  font-weight: 800;
 }
 
 .result-list {
@@ -460,8 +462,7 @@ h1 {
 .result-item {
   display: grid;
   gap: 10px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  box-shadow: none;
   padding: 16px;
 }
 
@@ -494,8 +495,7 @@ h1 {
 .record-card {
   display: grid;
   gap: 16px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
+  box-shadow: none;
   padding: 18px;
 }
 
@@ -523,33 +523,6 @@ h1 {
 
 .record-card p {
   color: var(--muted);
-}
-
-.record-metadata {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 10px;
-  margin: 0;
-}
-
-.record-metadata div {
-  min-width: 0;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  padding: 12px;
-}
-
-.record-metadata dt {
-  color: var(--muted);
-  font-size: 0.76rem;
-  font-weight: 800;
-  text-transform: uppercase;
-}
-
-.record-metadata dd {
-  margin: 5px 0 0;
-  font-weight: 800;
-  overflow-wrap: anywhere;
 }
 
 .text-link {
@@ -582,7 +555,7 @@ h1 {
     padding: 32px 20px;
   }
 
-  .status-strip,
+  .overview-metrics,
   .link-grid {
     grid-template-columns: 1fr;
   }
@@ -592,8 +565,8 @@ h1 {
   }
 
   .form-row,
-  .response-metadata,
-  .record-metadata,
+  .compact-metrics,
+  .record-metrics,
   .toolbar-panel {
     grid-template-columns: 1fr;
   }
@@ -602,14 +575,5 @@ h1 {
   .result-header,
   .record-card-header {
     display: grid;
-  }
-
-  .status-strip div {
-    border-right: 0;
-    border-bottom: 1px solid var(--line);
-  }
-
-  .status-strip div:last-child {
-    border-bottom: 0;
   }
 }

@@ -8,6 +8,16 @@ import {
   type BaselineEvalRun,
   type EvalRun,
 } from "@/lib/api-client";
+import {
+  Badge,
+  Button,
+  Card,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  MetricCard,
+  PageHeader,
+} from "@/components/ui";
 import { formatDate, formatPercent } from "@/lib/formatters";
 
 export default function EvalRunsPage() {
@@ -78,87 +88,72 @@ export default function EvalRunsPage() {
 
   return (
     <div className="dashboard-page">
-      <section className="intro">
-        <p className="eyebrow">Evaluation</p>
-        <h1>Eval Runs</h1>
-        <p className="lede">
-          Review baseline evaluation runs across refusal, citation, and answer
-          matching behavior.
-        </p>
-      </section>
+      <PageHeader
+        description="Review baseline evaluation runs across refusal, citation, and answer matching behavior."
+        eyebrow="Evaluation"
+        title="Eval Runs"
+      />
 
-      <section className="toolbar-panel">
+      <Card className="toolbar-panel">
         <div>
           <h2>Baseline eval</h2>
           <p>Run the local baseline dataset and refresh the recent run list.</p>
         </div>
-        <button disabled={isRunning} onClick={handleRunBaseline} type="button">
+        <Button disabled={isRunning} onClick={handleRunBaseline} type="button">
           {isRunning ? "Running..." : "Run baseline"}
-        </button>
-      </section>
+        </Button>
+      </Card>
 
       {success ? <p className="success-message">{success}</p> : null}
-      {error ? <p className="error-message">{error}</p> : null}
+      {error ? <ErrorState>{error}</ErrorState> : null}
 
-      <section className="data-panel" aria-label="Recent eval runs">
-        {isLoading ? <p className="empty-state">Loading eval runs...</p> : null}
+      <Card className="data-panel" aria-label="Recent eval runs">
+        {isLoading ? <LoadingState>Loading eval runs...</LoadingState> : null}
         {!isLoading && !error && runs.length === 0 ? (
-          <p className="empty-state">No eval runs yet. Run the baseline eval.</p>
+          <EmptyState>No eval runs yet. Run the baseline eval.</EmptyState>
         ) : null}
 
         {runs.length > 0 ? (
           <div className="record-list">
             {runs.map((run) => (
-              <article className="record-card" key={run.id}>
+              <Card as="article" className="record-card" key={run.id}>
                 <div className="record-card-header">
                   <div>
                     <h2>{run.name}</h2>
                     <p>{formatDate(run.createdAt)}</p>
                   </div>
-                  <span className="status-pill status-pill-ok">
+                  <Badge tone="success">
                     {run.passedCases}/{run.totalCases} passed
-                  </span>
+                  </Badge>
                 </div>
 
-                <dl className="record-metadata">
-                  <div>
-                    <dt>Total</dt>
-                    <dd>{run.totalCases}</dd>
-                  </div>
-                  <div>
-                    <dt>Passed</dt>
-                    <dd>{run.passedCases}</dd>
-                  </div>
-                  <div>
-                    <dt>Failed</dt>
-                    <dd>{run.failedCases}</dd>
-                  </div>
-                  <div>
-                    <dt>Refusal</dt>
-                    <dd>{formatPercent(run.refusalAccuracy)}</dd>
-                  </div>
-                  <div>
-                    <dt>Citation</dt>
-                    <dd>{formatPercent(run.citationAccuracy)}</dd>
-                  </div>
-                  <div>
-                    <dt>Answer</dt>
-                    <dd>{formatPercent(run.answerMatchAccuracy)}</dd>
-                  </div>
-                  <div>
-                    <dt>Provider</dt>
-                    <dd>{run.provider}</dd>
-                  </div>
+                <dl className="metric-grid record-metrics">
+                  <MetricCard label="Total" value={run.totalCases} />
+                  <MetricCard label="Passed" value={run.passedCases} />
+                  <MetricCard label="Failed" value={run.failedCases} />
+                  <MetricCard
+                    label="Refusal"
+                    value={formatPercent(run.refusalAccuracy)}
+                  />
+                  <MetricCard
+                    label="Citation"
+                    value={formatPercent(run.citationAccuracy)}
+                  />
+                  <MetricCard
+                    label="Answer"
+                    value={formatPercent(run.answerMatchAccuracy)}
+                  />
+                  <MetricCard label="Provider" value={run.provider} />
                 </dl>
 
                 <Link className="text-link" href={`/eval-runs/${run.id}`}>
                   View details
                 </Link>
-              </article>
+              </Card>
             ))}
           </div>
         ) : null}
-      </section>
+      </Card>
     </div>
   );
 }

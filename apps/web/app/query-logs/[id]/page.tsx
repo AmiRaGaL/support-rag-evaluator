@@ -3,6 +3,14 @@
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+import {
+  Card,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  MetricCard,
+  PageHeader,
+} from "@/components/ui";
 import { getQueryLog, type QueryLog } from "@/lib/api-client";
 import { formatConfidence, formatDate } from "@/lib/formatters";
 
@@ -51,39 +59,27 @@ export default function QueryLogDetailPage() {
         Back to query logs
       </Link>
 
-      {isLoading ? <p className="empty-state">Loading query log...</p> : null}
-      {error ? <p className="error-message">{error}</p> : null}
+      {isLoading ? <LoadingState>Loading query log...</LoadingState> : null}
+      {error ? <ErrorState>{error}</ErrorState> : null}
 
       {log ? (
         <>
-          <section className="intro">
-            <p className="eyebrow">Query detail</p>
-            <h1>Query Log</h1>
-            <p className="lede">{log.question}</p>
-          </section>
+          <PageHeader
+            description={log.question}
+            eyebrow="Query detail"
+            title="Query Log"
+          />
 
-          <section className="data-panel">
-            <dl className="record-metadata">
-              <div>
-                <dt>Refusal</dt>
-                <dd>{log.refusal ? "Yes" : "No"}</dd>
-              </div>
-              <div>
-                <dt>Confidence</dt>
-                <dd>{formatConfidence(log.confidence)}</dd>
-              </div>
-              <div>
-                <dt>Provider</dt>
-                <dd>{log.provider}</dd>
-              </div>
-              <div>
-                <dt>Latency</dt>
-                <dd>{log.latencyMs}ms</dd>
-              </div>
-              <div>
-                <dt>Created</dt>
-                <dd>{formatDate(log.createdAt)}</dd>
-              </div>
+          <Card className="data-panel">
+            <dl className="metric-grid record-metrics">
+              <MetricCard label="Refusal" value={log.refusal ? "Yes" : "No"} />
+              <MetricCard
+                label="Confidence"
+                value={formatConfidence(log.confidence)}
+              />
+              <MetricCard label="Provider" value={log.provider} />
+              <MetricCard label="Latency" value={`${log.latencyMs}ms`} />
+              <MetricCard label="Created" value={formatDate(log.createdAt)} />
             </dl>
 
             <div className="answer-panel">
@@ -95,7 +91,11 @@ export default function QueryLogDetailPage() {
               {log.retrievedChunks.length > 0 ? (
                 <div className="result-items">
                   {log.retrievedChunks.map((chunk) => (
-                    <article className="result-item" key={chunk.chunkId}>
+                    <Card
+                      as="article"
+                      className="result-item"
+                      key={chunk.chunkId}
+                    >
                       <div className="item-title">
                         <strong>{chunk.documentTitle}</strong>
                         <span>{chunk.sourceKey}</span>
@@ -105,14 +105,14 @@ export default function QueryLogDetailPage() {
                         {chunk.similarity.toFixed(3)} ·{" "}
                         {chunk.citationUsed ? "Cited" : "Not cited"}
                       </p>
-                    </article>
+                    </Card>
                   ))}
                 </div>
               ) : (
-                <p className="empty-state">No retrieved chunks recorded.</p>
+                <EmptyState>No retrieved chunks recorded.</EmptyState>
               )}
             </section>
-          </section>
+          </Card>
         </>
       ) : null}
     </div>
