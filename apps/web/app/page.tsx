@@ -8,6 +8,7 @@ import {
   MetricCard,
   PageHeader,
 } from "@/components/ui";
+import { SetupActions } from "@/components/dashboard/setup-actions";
 import { apiBaseUrl, getHealth, type HealthResponse } from "@/lib/api-client";
 
 export const dynamic = "force-dynamic";
@@ -59,6 +60,8 @@ export default async function Home() {
         <MetricCard label="Unsupported" value="Refusals" />
         <MetricCard label="API" value={apiBaseUrl} />
       </dl>
+
+      <SetupActions />
 
       <section className="link-grid" aria-label="Dashboard sections">
         {dashboardSections.map((section) =>

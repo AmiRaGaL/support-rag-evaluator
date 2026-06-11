@@ -171,6 +171,106 @@ h1 {
   line-height: 1.5;
 }
 
+.setup-panel {
+  display: grid;
+  gap: 20px;
+  padding: 24px;
+}
+
+.setup-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.65fr);
+  gap: 20px;
+}
+
+.setup-header div {
+  display: grid;
+  gap: 8px;
+}
+
+.setup-header h2,
+.setup-header p,
+.setup-action h3,
+.setup-action p {
+  margin: 0;
+}
+
+.setup-header h2 {
+  font-size: 1.8rem;
+}
+
+.setup-header p,
+.setup-action p,
+.demo-flow {
+  color: var(--muted);
+  line-height: 1.55;
+}
+
+.demo-flow {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: demo-flow;
+}
+
+.demo-flow li {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  counter-increment: demo-flow;
+  font-weight: 700;
+  padding: 12px;
+}
+
+.demo-flow li::before {
+  content: counter(demo-flow);
+  display: inline-grid;
+  width: 22px;
+  height: 22px;
+  margin-right: 8px;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--surface);
+  color: var(--accent-strong);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.demo-flow a {
+  color: var(--accent-strong);
+  text-decoration: underline;
+}
+
+.setup-actions {
+  display: grid;
+  gap: 12px;
+}
+
+.setup-action {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 16px;
+}
+
+.setup-action > .state-panel,
+.setup-action > .success-message {
+  grid-column: 1 / -1;
+}
+
+.setup-action div:first-child {
+  display: grid;
+  gap: 6px;
+}
+
 .badge {
   align-items: center;
   display: inline-flex;
@@ -624,12 +724,18 @@ h1 {
   }
 
   .overview-metrics,
-  .link-grid {
+  .link-grid,
+  .demo-flow {
     grid-template-columns: 1fr;
   }
 
   .health-panel {
     display: grid;
+  }
+
+  .setup-header,
+  .setup-action {
+    grid-template-columns: 1fr;
   }
 
   .form-row,
