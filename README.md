@@ -140,6 +140,8 @@ The Next.js dashboard lives in `apps/web` and focuses on the main support RAG wo
 
 Dashboard actions are user-triggered. The app does not ingest docs, embed chunks, or run evals automatically on page load.
 
+For portfolio capture guidance, see the screenshot checklist in [docs/screenshots.md](docs/screenshots.md).
+
 ## Evaluation
 
 The project includes a persisted baseline eval workflow for checking RAG behavior over known support cases. Eval runs track aggregate and per-case signals such as:
