@@ -2,12 +2,21 @@ import { Injectable, Logger } from '@nestjs/common';
 import { LlmService } from '../llm/llm.service';
 import { QueryLogsService } from '../query-logs/query-logs.service';
 import { RetrievalService } from '../retrieval/retrieval.service';
-import type { ChatRequest, ChatResponse } from './chat.types';
+import type {
+  ChatRequest,
+  ChatResponse,
+  ChatStreamEvent,
+  ChatStreamRetrievedChunk,
+  RetrievedChunk,
+} from './chat.types';
 
 export interface ChatResponseWithMetadata {
   response: ChatResponse;
   confidence: number;
+  retrievedChunks: ChatStreamRetrievedChunk[];
 }
+
+const STREAM_CHUNK_SIZE = 32;
 
 @Injectable()
 export class ChatService {
@@ -28,6 +37,38 @@ export class ChatService {
   async answerQuestionWithMetadata(
     input: ChatRequest,
   ): Promise<ChatResponseWithMetadata> {
+    const result = await this.answerQuestionInternal(input);
+
+    return {
+      response: result.response,
+      confidence: result.confidence,
+      retrievedChunks: result.retrievedChunks,
+    };
+  }
+
+  async *streamAnswerQuestion(
+    input: ChatRequest,
+  ): AsyncGenerator<ChatStreamEvent> {
+    const result = await this.answerQuestionInternal(input);
+
+    for (const text of chunkAnswerText(result.response.answer)) {
+      yield {
+        type: 'answer_delta',
+        text,
+      };
+    }
+
+    yield {
+      type: 'complete',
+      response: result.response,
+      confidence: result.confidence,
+      retrievedChunks: result.retrievedChunks,
+    };
+  }
+
+  private async answerQuestionInternal(
+    input: ChatRequest,
+  ): Promise<ChatResponseWithMetadata> {
     const startedAt = Date.now();
     const question = input.question.trim();
 
@@ -45,7 +86,11 @@ export class ChatService {
         latencyMs: Date.now() - startedAt,
       });
 
-      return result;
+      return {
+        response: result.response,
+        confidence: result.confidence,
+        retrievedChunks: [],
+      };
     }
 
     const retrievalResult = await this.retrievalService.searchChunks({
@@ -66,7 +111,14 @@ export class ChatService {
       latencyMs: Date.now() - startedAt,
     });
 
-    return result;
+    return {
+      response: result.response,
+      confidence: result.confidence,
+      retrievedChunks: this.toStreamRetrievedChunks(
+        retrievalResult.chunks,
+        result.response,
+      ),
+    };
   }
 
   private async logQuery(input: {
@@ -114,4 +166,38 @@ export class ChatService {
       );
     }
   }
+
+  private toStreamRetrievedChunks(
+    chunks: RetrievedChunk[],
+    response: ChatResponse,
+  ): ChatStreamRetrievedChunk[] {
+    const citationChunkIds =
+      response.status === 'answered'
+        ? new Set(response.citations.map((citation) => citation.chunkId))
+        : new Set<string>();
+
+    return chunks.map((chunk) => ({
+      chunkId: chunk.id,
+      documentId: chunk.documentId,
+      documentTitle: chunk.documentTitle,
+      sourceKey: chunk.sourceKey,
+      chunkIndex: chunk.chunkIndex,
+      similarity: chunk.score,
+      citationUsed: citationChunkIds.has(chunk.id),
+    }));
+  }
+}
+
+export function chunkAnswerText(answer: string): string[] {
+  if (answer.length <= STREAM_CHUNK_SIZE) {
+    return answer.length > 0 ? [answer] : [];
+  }
+
+  const chunks: string[] = [];
+
+  for (let index = 0; index < answer.length; index += STREAM_CHUNK_SIZE) {
+    chunks.push(answer.slice(index, index + STREAM_CHUNK_SIZE));
+  }
+
+  return chunks;
 }

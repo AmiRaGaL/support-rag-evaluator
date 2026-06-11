@@ -9,6 +9,7 @@ import {
   type BaselineEvalRun,
   type EvalRun,
 } from "@/lib/api-client";
+import { shapeEvalAnalytics } from "@/lib/eval-analytics";
 import {
   Badge,
   Button,
@@ -79,6 +80,8 @@ export default function EvalRunsPage() {
     }
   }
 
+  const analytics = shapeEvalAnalytics(runs);
+
   return (
     <div className="dashboard-page">
       <PageHeader
@@ -129,6 +132,71 @@ export default function EvalRunsPage() {
             </>
           )}
         </ErrorState>
+      ) : null}
+
+      {!isLoading && !error && runs.length > 0 ? (
+        <Card className="analytics-panel" aria-label="Eval trends">
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Recent run analytics</p>
+              <h2>Eval Trends</h2>
+            </div>
+            <Badge>{analytics.runCount} runs</Badge>
+          </div>
+
+          <dl className="metric-grid eval-analytics-metrics">
+            <MetricCard label="Total cases" value={analytics.totalCases} />
+            <MetricCard label="Passed cases" value={analytics.passedCases} />
+            <MetricCard label="Failed cases" value={analytics.failedCases} />
+            <MetricCard
+              label="Refusal accuracy"
+              value={formatPercent(analytics.refusalAccuracy)}
+            />
+            <MetricCard
+              label="Citation accuracy"
+              value={formatPercent(analytics.citationAccuracy)}
+            />
+            <MetricCard
+              label="Answer match"
+              value={formatPercent(analytics.answerMatchAccuracy)}
+            />
+          </dl>
+
+          <div className="trend-chart" aria-label="Pass rate trend by run">
+            {analytics.trend.map((point) => (
+              <div className="trend-row" key={point.id}>
+                <div>
+                  <strong>{point.label}</strong>
+                  <span>{formatDate(point.createdAt)}</span>
+                </div>
+                <div
+                  className="trend-track"
+                  aria-label={`${point.label} pass rate ${formatPercent(
+                    point.passRate,
+                  )}`}
+                >
+                  <span style={{ width: toPercentWidth(point.passRate) }} />
+                </div>
+                <strong>{formatPercent(point.passRate)}</strong>
+              </div>
+            ))}
+          </div>
+
+          <div className="accuracy-spark-grid" aria-label="Accuracy summaries">
+            <AccuracySparkline
+              label="Refusal"
+              points={analytics.trend.map((point) => point.refusalAccuracy)}
+            />
+            <AccuracySparkline
+              label="Citation"
+              points={analytics.trend.map((point) => point.citationAccuracy)}
+            />
+            <AccuracySparkline
+              label="Answer"
+              points={analytics.trend.map((point) => point.answerMatchAccuracy)}
+            />
+          </div>
+        </Card>
       ) : null}
 
       <Card className="data-panel" aria-label="Recent eval runs">
@@ -226,7 +294,35 @@ function formatPassRate(run: EvalRun) {
 }
 
 function getPassRateWidth(run: EvalRun) {
-  return `${Math.round(
-    (run.passedCases / Math.max(run.totalCases, 1)) * 100,
-  )}%`;
+  return toPercentWidth(run.passedCases / Math.max(run.totalCases, 1));
+}
+
+function toPercentWidth(value: number) {
+  return `${Math.round(Math.max(0, Math.min(1, value)) * 100)}%`;
+}
+
+function AccuracySparkline({
+  label,
+  points,
+}: {
+  label: string;
+  points: number[];
+}) {
+  return (
+    <div className="accuracy-sparkline">
+      <div className="item-title">
+        <strong>{label}</strong>
+        <span>{points.length > 0 ? formatPercent(points.at(-1) ?? 0) : "n/a"}</span>
+      </div>
+      <div className="spark-bars">
+        {points.map((point, index) => (
+          <span
+            aria-label={`${label} run ${index + 1}: ${formatPercent(point)}`}
+            key={`${label}-${index}`}
+            style={{ height: toPercentWidth(point) }}
+          />
+        ))}
+      </div>
+    </div>
+  );
 }

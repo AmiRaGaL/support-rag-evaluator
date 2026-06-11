@@ -16,16 +16,16 @@ Support RAG Evaluator is currently a portfolio-grade full-stack RAG evaluator. T
 - **Persisted eval runs:** Eval runs and per-case results are stored for later inspection.
 - **OpenAPI docs:** Swagger UI documents the API workflows.
 - **Next.js dashboard:** Dashboard supports setup actions, chat, query logs, and eval runs.
+- **Generated-style web API client:** Dashboard calls are routed through a checked-in typed client with a local OpenAPI validation script.
+- **Streaming chat:** `POST /chat/stream` streams answer text and final metadata while `POST /chat` remains the stable non-streaming endpoint.
+- **Eval analytics:** Eval Runs includes recent-run summaries and lightweight native trend visuals.
 - **Dockerized full-stack demo:** Docker Compose runs Postgres, the API, and the web dashboard with explicit migrations.
 
 ## Future Improvements
 
 - **Auth:** Add user authentication and authorization for dashboard/API access.
 - **Deployment:** Add production deployment infrastructure and environment-specific configuration.
-- **Streaming chat:** Stream answer generation to improve chat UX.
-- **Generated OpenAPI client:** Generate a typed web client from the API schema.
-- **Advanced eval metrics:** Expand beyond the current baseline scoring with richer retrieval and answer-quality metrics.
-- **Eval trend charts:** Visualize eval metrics over time in the dashboard.
+- **Advanced eval metrics:** Expand beyond the current baseline scoring and dashboard trends with richer retrieval and answer-quality metrics.
 - **Multi-tenant datasets:** Support multiple documentation collections or customer workspaces.
 - **Production observability:** Add structured logs, metrics, tracing, alerts, and operational dashboards.
 
@@ -36,4 +36,4 @@ Support RAG Evaluator is currently a portfolio-grade full-stack RAG evaluator. T
 - Real embedding experiments require provider configuration, matching pgvector dimensions, and re-embedding documents when switching providers.
 - Authentication is not implemented yet.
 - Production deployment is not implemented yet.
-- Streaming chat is not implemented yet.
+- Streaming uses the deterministic fallback by default. Real provider behavior depends on local provider configuration and should not be required in CI.

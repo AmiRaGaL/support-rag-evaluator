@@ -11,6 +11,9 @@ Support RAG Evaluator is an eval-driven RAG support assistant that answers from 
 - Optional Groq provider for local experimentation.
 - Query logging for prompts, answers, retrieved chunks, citations, refusal status, latency, and evaluation metadata.
 - Persisted baseline eval runs with aggregate metrics and per-case results.
+- Eval analytics dashboard with recent-run trend summaries.
+- Stable non-streaming chat plus streaming chat support.
+- Generated-style typed API client support for the web dashboard.
 - OpenAPI documentation through Swagger UI.
 - Next.js dashboard for setup actions, chat, query logs, and eval runs.
 - Docker Compose full-stack demo with Postgres, API, and web dashboard.
@@ -165,7 +168,8 @@ Troubleshooting:
 - `POST /retrieval/embed-missing` - create embeddings for chunks that do not have them.
 - `POST /retrieval/search` - search embedded support docs.
 - `GET /retrieval/search` - search support docs with query parameters.
-- `POST /chat` - ask a grounded support question and receive answer/citation metadata.
+- `POST /chat` - stable non-streaming chat endpoint for grounded answers, citations, and refusals.
+- `POST /chat/stream` - streaming chat endpoint that emits answer text incrementally and finishes with response metadata.
 - `GET /query-logs` - list recent query logs.
 - `GET /query-logs/:id` - inspect a single query log.
 - `GET /evals/runs` - list persisted eval runs.
@@ -178,13 +182,34 @@ Troubleshooting:
 The Next.js dashboard lives in `apps/web` and focuses on the main support RAG workflow:
 
 - Overview: API health, setup actions, and workflow links.
-- Chat: grounded question form with answer, citations, and retrieval metadata.
+- Chat: grounded question form with streaming answer text, final citations/refusal metadata, confidence, and retrieved chunks. If streaming fails, the page falls back to the stable non-streaming `POST /chat` path.
 - Query Logs: recent logs plus detail views for answers, citations, retrieval, latency, and refusal status.
-- Eval Runs: baseline eval trigger, run history, aggregate metrics, and per-case results.
+- Eval Runs: baseline eval trigger, run history, aggregate metrics, eval trend summaries, and per-case results.
 
 Dashboard actions are user-triggered. The app does not ingest docs, embed chunks, or run evals automatically on page load.
 
 For portfolio capture guidance, see the screenshot checklist in [docs/screenshots.md](docs/screenshots.md).
+
+## Generated-Style Web API Client
+
+The web app wraps a checked-in generated-style client at `apps/web/lib/api-client.generated.ts`. It keeps dashboard API calls typed without adding a heavy generator dependency to CI.
+
+To validate the client against the local OpenAPI document when the API is running:
+
+```bash
+cd apps/web
+npm run generate:api-client
+```
+
+If `http://localhost:3001/docs-json` is unavailable, the script keeps the checked-in client unchanged. This is intentional so local development and CI do not require external services or API keys.
+
+## Streaming Chat
+
+`POST /chat` remains the stable non-streaming endpoint and keeps the existing response shape. Use it for simple integrations, tests, and fallback behavior.
+
+`POST /chat/stream` returns server-sent events. The deterministic provider streams a CI-safe fallback by chunking the final deterministic answer. When Groq is configured through `LLM_PROVIDER=groq` and local Groq credentials, the same endpoint still works by chunking the final Groq answer; native Groq token streaming is not required for this phase.
+
+The stream sends incremental answer text and then a final completion event with the final chat response plus confidence and retrieved chunk metadata. Answered responses include citations; refusals include refusal metadata and no citations, matching the normal chat contract.
 
 ## Evaluation
 
@@ -197,6 +222,15 @@ The project includes a persisted baseline eval workflow for checking RAG behavio
 - Latency metadata
 
 The deterministic provider keeps evals repeatable and CI-safe. Groq can be enabled locally for experimentation, but it is optional and not required for the default demo or tests.
+
+Recent eval runs are also summarized in the dashboard with total, passed, and failed cases plus refusal, citation, and answer-match accuracy trends. If there are no eval runs yet, run the baseline eval from the dashboard or call `POST /evals/run-baseline`.
+
+## Troubleshooting
+
+- **API unavailable:** Check `http://localhost:3001/health`, confirm the API process or Compose service is running, and verify `NEXT_PUBLIC_API_BASE_URL` / `API_BASE_URL`.
+- **Streaming unsupported or unavailable:** Use the dashboard fallback or call `POST /chat`. The deterministic provider is safe for local/CI streaming; provider-specific streaming behavior depends on local configuration and should remain optional.
+- **No eval runs yet:** Run the baseline eval from the dashboard or call `POST /evals/run-baseline`.
+- **Generated client out of date:** Start the API locally, then run `cd apps/web && npm run generate:api-client` to validate the checked-in client against OpenAPI.
 
 ## CI and Quality Gates
 

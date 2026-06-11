@@ -1,249 +1,89 @@
+import {
+  ApiClientError,
+  GeneratedApiClient,
+} from "@/lib/api-client.generated";
+import type * as ApiSchemas from "@/lib/api-client.generated";
+
 const DEFAULT_API_BASE_URL = "http://localhost:3001";
 
 export const apiBaseUrl =
   process.env.NEXT_PUBLIC_API_BASE_URL?.replace(/\/$/, "") ??
   DEFAULT_API_BASE_URL;
 
-export function getServerApiBaseUrl() {
-  return process.env.API_BASE_URL?.replace(/\/$/, "") ?? apiBaseUrl;
-}
+const generatedClient = new GeneratedApiClient({
+  resolveUrl: buildApiUrl,
+});
 
-export type ChatRefusalReason =
-  | "empty_question"
-  | "no_retrieved_chunks"
-  | "insufficient_overlap"
-  | "invalid_llm_output"
-  | "unsupported_by_retrieved_chunks";
+export { ApiClientError };
 
-export interface HealthResponse {
-  status: string;
-  service: string;
-  database: string;
-  timestamp: string;
-}
-
-export interface IngestedDocumentSummary {
-  id: string;
-  title: string;
-  sourceKey: string;
-  chunkCount: number;
-}
-
-export interface IngestionResponse {
-  documentsProcessed: number;
-  chunksCreated: number;
-  documents: IngestedDocumentSummary[];
-}
-
-export interface EmbedMissingChunksResponse {
-  embeddedCount: number;
-}
-
-export interface ChatRequest {
-  question: string;
-  limit?: number;
-}
-
-export interface ChatCitation {
-  chunkId: string;
-  documentId: string;
-  documentTitle: string;
-  sourceKey: string;
-  chunkIndex: number;
-  snippet: string;
-}
-
-export interface ChatAnswerResponse {
-  status: "answered";
-  question: string;
-  answer: string;
-  citations: ChatCitation[];
-  retrievedChunkCount: number;
-}
-
-export interface ChatRefusalResponse {
-  status: "refused";
-  question: string;
-  answer: string;
-  citations: [];
-  refusalReason: ChatRefusalReason;
-  retrievedChunkCount: number;
-}
-
-export type ChatResponse = ChatAnswerResponse | ChatRefusalResponse;
-
-export interface QueryLogRetrievedChunk {
-  chunkId: string;
-  documentId: string;
-  documentTitle: string;
-  sourceKey: string;
-  chunkIndex: number;
-  similarity: number;
-  citationUsed: boolean;
-}
-
-export interface QueryLog {
-  id: string;
-  question: string;
-  answer: string;
-  refusal: boolean;
-  confidence: number | null;
-  provider: string;
-  retrievedChunkCount: number;
-  latencyMs: number;
-  createdAt: string;
-  retrievedChunks: QueryLogRetrievedChunk[];
-}
-
-export interface EvalMetrics {
-  totalCases: number;
-  refusalAccuracy: number;
-  citationAccuracy: number;
-  answerMatchAccuracy: number;
-  overallAccuracy: number;
-}
-
-export interface EvalScore {
-  refusalCorrect: boolean;
-  citationCorrect: boolean;
-  answerMatch: boolean;
-}
-
-export type EvalCaseType = "supported" | "unsupported";
-
-export interface BaselineEvalCaseResult {
-  id: string;
-  question: string;
-  type: EvalCaseType;
-  expectedAnswer: string;
-  expectedSources: string[];
-  response: ChatResponse;
-  actualConfidence: number;
-  score: EvalScore;
-}
-
-export interface BaselineEvalRun {
-  evalRunId: string;
-  dataset: string;
-  metrics: EvalMetrics;
-  results: BaselineEvalCaseResult[];
-}
-
-export interface PersistedEvalCaseResult {
-  caseId: string;
-  question: string;
-  type: EvalCaseType;
-  passed: boolean;
-  expectedAnswer: string;
-  expectedSources: string[];
-  actualAnswer: string;
-  actualRefusal: boolean;
-  actualConfidence: number | null;
-  actualCitations: unknown;
-  refusalCorrect: boolean;
-  citationCorrect: boolean;
-  answerMatch: boolean;
-}
-
-export interface EvalRun {
-  id: string;
-  name: string;
-  datasetPath: string;
-  totalCases: number;
-  passedCases: number;
-  failedCases: number;
-  refusalAccuracy: number;
-  citationAccuracy: number;
-  answerMatchAccuracy: number;
-  provider: string;
-  createdAt: string;
-  results: PersistedEvalCaseResult[];
-}
+export type ChatRefusalReason = ApiSchemas.ChatRefusalReason;
+export type HealthResponse = ApiSchemas.HealthResponse;
+export type IngestedDocumentSummary = ApiSchemas.IngestedDocumentSummary;
+export type IngestionResponse = ApiSchemas.IngestionResponse;
+export type EmbedMissingChunksResponse = ApiSchemas.EmbedMissingChunksResponse;
+export type ChatRequest = ApiSchemas.ChatRequest;
+export type ChatCitation = ApiSchemas.ChatCitation;
+export type ChatAnswerResponse = ApiSchemas.ChatAnswerResponse;
+export type ChatRefusalResponse = ApiSchemas.ChatRefusalResponse;
+export type ChatResponse = ApiSchemas.ChatResponse;
+export type QueryLogRetrievedChunk = ApiSchemas.QueryLogRetrievedChunk;
+export type QueryLog = ApiSchemas.QueryLog;
+export type EvalMetrics = ApiSchemas.EvalMetrics;
+export type EvalScore = ApiSchemas.EvalScore;
+export type EvalCaseType = ApiSchemas.EvalCaseType;
+export type BaselineEvalCaseResult = ApiSchemas.BaselineEvalCaseResult;
+export type BaselineEvalRun = ApiSchemas.BaselineEvalRun;
+export type PersistedEvalCaseResult = ApiSchemas.PersistedEvalCaseResult;
+export type EvalRun = ApiSchemas.EvalRun;
+export type ChatStreamEvent = ApiSchemas.ChatStreamEvent;
+export type ChatStreamCompleteEvent = ApiSchemas.ChatStreamCompleteEvent;
 
 export interface ListOptions {
   limit?: number;
 }
 
-export class ApiClientError extends Error {
-  constructor(
-    message: string,
-    readonly status: number,
-    readonly statusText: string,
-    readonly details?: unknown,
-  ) {
-    super(message);
-    this.name = "ApiClientError";
-  }
+export function getServerApiBaseUrl() {
+  return process.env.API_BASE_URL?.replace(/\/$/, "") ?? apiBaseUrl;
 }
 
 export function getHealth() {
-  return request<HealthResponse>("/health");
+  return generatedClient.getHealth();
 }
 
 export function sendChatMessage(input: ChatRequest) {
-  return request<ChatResponse>("/chat", {
-    method: "POST",
-    body: input,
-  });
+  return generatedClient.sendChatMessage(input);
+}
+
+export function streamChatMessage(input: ChatRequest) {
+  return generatedClient.streamChatMessage(input);
 }
 
 export function ingestSampleDocs() {
-  return request<IngestionResponse>("/ingestion/sample-docs", {
-    method: "POST",
-  });
+  return generatedClient.ingestSampleDocs();
 }
 
 export function embedMissingChunks() {
-  return request<EmbedMissingChunksResponse>("/retrieval/embed-missing", {
-    method: "POST",
-  });
+  return generatedClient.embedMissingChunks();
 }
 
 export function listQueryLogs(options?: ListOptions) {
-  return request<QueryLog[]>(withLimit("/query-logs", options?.limit));
+  return generatedClient.listQueryLogs(options);
 }
 
 export function getQueryLog(id: string) {
-  return request<QueryLog>(`/query-logs/${encodeURIComponent(id)}`);
+  return generatedClient.getQueryLog(id);
 }
 
 export function runBaselineEval() {
-  return request<BaselineEvalRun>("/evals/run-baseline", {
-    method: "POST",
-  });
+  return generatedClient.runBaselineEval();
 }
 
 export function listEvalRuns(options?: ListOptions) {
-  return request<EvalRun[]>(withLimit("/evals/runs", options?.limit));
+  return generatedClient.listEvalRuns(options);
 }
 
 export function getEvalRun(id: string) {
-  return request<EvalRun>(`/evals/runs/${encodeURIComponent(id)}`);
-}
-
-interface RequestOptions {
-  method?: "GET" | "POST";
-  body?: unknown;
-}
-
-async function request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-  const response = await fetch(buildApiUrl(path), {
-    method: options.method ?? "GET",
-    cache: "no-store",
-    headers:
-      options.body === undefined
-        ? undefined
-        : {
-            "Content-Type": "application/json",
-          },
-    body: options.body === undefined ? undefined : JSON.stringify(options.body),
-  });
-
-  if (!response.ok) {
-    throw await toApiClientError(response);
-  }
-
-  return (await response.json()) as T;
+  return generatedClient.getEvalRun(id);
 }
 
 function buildApiUrl(path: string) {
@@ -254,69 +94,4 @@ function buildApiUrl(path: string) {
   }
 
   return `${getServerApiBaseUrl()}${normalizedPath}`;
-}
-
-function withLimit(path: string, limit?: number) {
-  if (limit === undefined) {
-    return path;
-  }
-
-  const params = new URLSearchParams({ limit: String(limit) });
-
-  return `${path}?${params.toString()}`;
-}
-
-async function toApiClientError(response: Response) {
-  const body = await readResponseBody(response);
-  const message = extractErrorMessage(body);
-  const fallback = `${response.status} ${response.statusText}`.trim();
-
-  return new ApiClientError(
-    message ? `API request failed: ${message}` : `API request failed: ${fallback}`,
-    response.status,
-    response.statusText,
-    body,
-  );
-}
-
-async function readResponseBody(response: Response): Promise<unknown> {
-  const contentType = response.headers.get("content-type") ?? "";
-
-  if (contentType.includes("application/json")) {
-    return response.json();
-  }
-
-  const text = await response.text();
-
-  return text.length > 0 ? text : undefined;
-}
-
-function extractErrorMessage(body: unknown): string | undefined {
-  if (typeof body === "string") {
-    return body;
-  }
-
-  if (!isRecord(body)) {
-    return undefined;
-  }
-
-  const message = body.message;
-
-  if (Array.isArray(message)) {
-    return message.filter((item) => typeof item === "string").join("; ");
-  }
-
-  if (typeof message === "string") {
-    return message;
-  }
-
-  if (typeof body.error === "string") {
-    return body.error;
-  }
-
-  return undefined;
-}
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null;
 }
