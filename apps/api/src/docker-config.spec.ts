@@ -5,6 +5,17 @@ const apiRoot = process.cwd();
 const repoRoot = resolve(apiRoot, '..', '..');
 const dockerfilePath = resolve(apiRoot, 'Dockerfile');
 const dockerIgnorePath = resolve(apiRoot, '.dockerignore');
+const webDockerfilePath = resolve(repoRoot, 'apps', 'web', 'Dockerfile');
+const webApiRoutePath = resolve(
+  repoRoot,
+  'apps',
+  'web',
+  'app',
+  'api',
+  'backend',
+  '[...path]',
+  'route.ts',
+);
 const composePath = resolve(repoRoot, 'docker-compose.yml');
 
 function readText(path: string): string {
@@ -27,6 +38,14 @@ function serviceBlock(compose: string, serviceName: string): string {
 }
 
 describe('Docker configuration', () => {
+  it('defines the full-stack demo services', () => {
+    const compose = readText(composePath);
+
+    expect(serviceBlock(compose, 'postgres')).not.toBe('');
+    expect(serviceBlock(compose, 'api')).not.toBe('');
+    expect(serviceBlock(compose, 'web')).not.toBe('');
+  });
+
   it('keeps the API Docker runtime files present', () => {
     expect(existsSync(dockerfilePath)).toBe(true);
     expect(existsSync(dockerIgnorePath)).toBe(true);
@@ -39,6 +58,24 @@ describe('Docker configuration', () => {
     expect(dockerfile).toContain('RUN npm run build');
     expect(dockerfile).toContain('EXPOSE 3001');
     expect(dockerfile).toContain('CMD ["node", "dist/main.js"]');
+  });
+
+  it('keeps the web Docker runtime file present for production builds', () => {
+    expect(existsSync(webDockerfilePath)).toBe(true);
+
+    const dockerfile = readText(webDockerfilePath);
+
+    expect(dockerfile).toContain('FROM base AS deps');
+    expect(dockerfile).toContain('RUN npm ci');
+    expect(dockerfile).toContain('FROM deps AS build');
+    expect(dockerfile).toContain(
+      'ARG NEXT_PUBLIC_API_BASE_URL=http://localhost:3001',
+    );
+    expect(dockerfile).toContain('RUN npm run build');
+    expect(dockerfile).toContain('FROM base AS runtime');
+    expect(dockerfile).toContain('ENV API_BASE_URL=http://localhost:3001');
+    expect(dockerfile).toContain('EXPOSE 3000');
+    expect(dockerfile).toContain('CMD ["node", "server.js"]');
   });
 
   it('defines an API service with deterministic, service-host defaults', () => {
@@ -55,6 +92,24 @@ describe('Docker configuration', () => {
     expect(api).toContain('PORT: 3001');
     expect(api).toContain('LLM_PROVIDER: deterministic');
     expect(api).toContain('- "3001:3001"');
+  });
+
+  it('defines a web service with local demo API wiring', () => {
+    const compose = readText(composePath);
+    const web = serviceBlock(compose, 'web');
+
+    expect(web).toContain('context: ./apps/web');
+    expect(web).toContain('NEXT_PUBLIC_API_BASE_URL: http://localhost:3001');
+    expect(web).toContain('API_BASE_URL: http://api:3001');
+    expect(web).toContain('- "3000:3000"');
+    expect(web).toContain('- api');
+  });
+
+  it('keeps the web proxy route on the runtime server API base URL', () => {
+    const route = readText(webApiRoutePath);
+
+    expect(route).toContain('getServerApiBaseUrl');
+    expect(route).not.toContain('apiBaseUrl');
   });
 
   it('keeps Postgres on host port 5433 while using container port 5432', () => {
