@@ -38,6 +38,10 @@ function serviceBlock(compose: string, serviceName: string): string {
 }
 
 describe('Docker configuration', () => {
+  it('keeps the Docker Compose file present', () => {
+    expect(existsSync(composePath)).toBe(true);
+  });
+
   it('defines the full-stack demo services', () => {
     const compose = readText(composePath);
 
