@@ -7,6 +7,7 @@ Support RAG Evaluator is a full-stack, eval-driven support assistant. It is desi
 - **Next.js dashboard (`apps/web`)**: Browser UI for setup actions, grounded chat, query logs, persisted eval runs, and eval trend summaries.
 - **Generated-style web API client**: Checked-in typed client used by the dashboard wrapper, with a local validation script for the OpenAPI document.
 - **NestJS API (`apps/api`)**: Backend application that owns ingestion, retrieval, chat orchestration, logging, eval execution, OpenAPI docs, and database access.
+- **Optional API auth guard**: Global NestJS guard that can require a shared bearer/API token for protected API routes when `AUTH_ENABLED=true`.
 - **Ingestion module**: Reads bundled markdown support docs, extracts titles/source keys, chunks content, and upserts documents/chunks.
 - **Embeddings module**: Provides deterministic embeddings for local development, tests, and CI-safe retrieval behavior.
 - **Retrieval module**: Embeds queries, searches stored chunk vectors with pgvector, and returns ranked support-document chunks.
@@ -14,6 +15,7 @@ Support RAG Evaluator is a full-stack, eval-driven support assistant. It is desi
 - **LLM provider abstraction**: Selects a deterministic provider by default or an optional Groq provider when configured.
 - **Query logging**: Persists questions, answers, refusal state, provider, confidence, latency, retrieved chunks, and citation-use metadata.
 - **Eval runner**: Runs the baseline eval dataset through the same ingestion, embedding, retrieval, and chat path used by the API.
+- **Eval judge provider**: Optional judge layer for eval cases. The deterministic judge is default; Groq judge mode is explicit and config-gated.
 - **Prisma/Postgres/pgvector**: Stores documents, chunks, embeddings, query logs, retrieved chunk records, eval runs, and eval case results.
 
 ## Architecture Diagram
@@ -27,6 +29,8 @@ Next.js Dashboard (apps/web)
   | HTTP / same-origin API proxy
   v
 NestJS API (apps/api)
+  |
+  +--> Optional Auth Guard
   |
   +--> Ingestion Module --------+
   |                             |
@@ -44,9 +48,23 @@ NestJS API (apps/api)
   +--> Query Logs
   |
   +--> Eval Runner
+          |
+          +--> Eval Judge Provider
+                 |
+                 +--> Deterministic judge (default)
+                 +--> Groq judge (optional)
 ```
 
 ## Data Flows
+
+### Optional Auth Guard
+
+1. `AUTH_ENABLED=false` is the default, so requests continue through the API without a token for local demos, tests, and CI.
+2. When `AUTH_ENABLED=true`, a global guard checks protected routes before controller handlers run.
+3. The guard accepts either `Authorization: Bearer <token>` or `x-api-key`, matching the configured `API_AUTH_TOKEN`.
+4. Missing or invalid tokens return `401 Unauthorized` without logging token values.
+5. Routes marked public, currently `GET /health`, remain available without a token. Swagger docs at `/docs` are also registered as public documentation in the current setup.
+6. This guard is simple token protection, not sessions, OAuth, roles, or full user management.
 
 ### Document Ingestion
 
@@ -101,8 +119,11 @@ NestJS API (apps/api)
 3. The service ingests sample docs and embeds any missing chunks.
 4. Each eval case is sent through the same chat service used by normal requests.
 5. The scorer checks refusal behavior, citation correctness, and expected answer matching.
-6. Aggregate metrics and per-case results are persisted as `EvalRun` and `EvalCaseResult` rows.
-7. The dashboard reads eval history through `GET /evals/runs` and `GET /evals/runs/:id`.
+6. The eval judge provider adds judge metadata. The deterministic judge mirrors the stable scoring dimensions by default; Groq judge mode runs only when `EVAL_JUDGE_PROVIDER=groq`.
+7. Judge output is validated for strict JSON fields: score, pass/fail, reasoning, groundedness, answer correctness, citation support, and refusal behavior.
+8. Invalid judge output fails closed as a failed judge result with a clear reason.
+9. Aggregate metrics and per-case results are persisted as `EvalRun` and `EvalCaseResult` rows, including judge metadata when present.
+10. The dashboard reads eval history through `GET /evals/runs` and `GET /evals/runs/:id`.
 
 ### Eval Analytics Dashboard
 
