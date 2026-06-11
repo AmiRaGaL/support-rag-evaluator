@@ -18,6 +18,23 @@ export interface HealthResponse {
   timestamp: string;
 }
 
+export interface IngestedDocumentSummary {
+  id: string;
+  title: string;
+  sourceKey: string;
+  chunkCount: number;
+}
+
+export interface IngestionResponse {
+  documentsProcessed: number;
+  chunksCreated: number;
+  documents: IngestedDocumentSummary[];
+}
+
+export interface EmbedMissingChunksResponse {
+  embeddedCount: number;
+}
+
 export interface ChatRequest {
   question: string;
   limit?: number;
@@ -163,6 +180,18 @@ export function sendChatMessage(input: ChatRequest) {
   return request<ChatResponse>("/chat", {
     method: "POST",
     body: input,
+  });
+}
+
+export function ingestSampleDocs() {
+  return request<IngestionResponse>("/ingestion/sample-docs", {
+    method: "POST",
+  });
+}
+
+export function embedMissingChunks() {
+  return request<EmbedMissingChunksResponse>("/retrieval/embed-missing", {
+    method: "POST",
   });
 }
 

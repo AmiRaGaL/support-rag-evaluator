@@ -2,7 +2,16 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { listQueryLogs, type QueryLog } from "@/lib/api-client";
+import {
+  Badge,
+  Card,
+  EmptyState,
+  ErrorState,
+  LoadingState,
+  MetricCard,
+  PageHeader,
+} from "@/components/ui";
+import { apiBaseUrl, listQueryLogs, type QueryLog } from "@/lib/api-client";
 import { formatConfidence, formatDate } from "@/lib/formatters";
 
 export default function QueryLogsPage() {
@@ -21,13 +30,9 @@ export default function QueryLogsPage() {
           setLogs(result);
           setError(null);
         }
-      } catch (caughtError) {
+      } catch {
         if (isCurrent) {
-          setError(
-            caughtError instanceof Error
-              ? caughtError.message
-              : "Unable to load query logs.",
-          );
+          setError("query-logs-request-failed");
         }
       } finally {
         if (isCurrent) {
@@ -45,69 +50,76 @@ export default function QueryLogsPage() {
 
   return (
     <div className="dashboard-page">
-      <section className="intro">
-        <p className="eyebrow">Recent activity</p>
-        <h1>Query Logs</h1>
-        <p className="lede">
-          Inspect recent support questions, refusal behavior, provider metadata,
-          and response latency.
-        </p>
-      </section>
+      <PageHeader
+        description="Inspect recent support questions, refusal behavior, provider metadata, and response latency."
+        eyebrow="Recent activity"
+        title="Query Logs"
+      />
 
-      <section className="data-panel" aria-label="Recent query logs">
-        {isLoading ? <p className="empty-state">Loading query logs...</p> : null}
-        {error ? <p className="error-message">{error}</p> : null}
+      <Card className="data-panel" aria-label="Recent query logs">
+        {isLoading ? (
+          <LoadingState title="Loading query logs">
+            Fetching the latest support questions, answers, retrieval metadata,
+            and latency from the API.
+          </LoadingState>
+        ) : null}
+        {error ? (
+          <ErrorState title="Query logs are unavailable">
+            The dashboard could not load recent activity from{" "}
+            <code>{apiBaseUrl}</code>. Check the API base URL and make sure the
+            backend is running locally.
+          </ErrorState>
+        ) : null}
         {!isLoading && !error && logs.length === 0 ? (
-          <p className="empty-state">No query logs yet. Send a chat question first.</p>
+          <EmptyState
+            action={
+              <Link className="button button-secondary" href="/chat">
+                Ask a question
+              </Link>
+            }
+            title="No query logs yet"
+          >
+            Send a chat question to create the first query log. If supported
+            questions keep refusing, ingest sample docs and embed missing chunks
+            before trying again.
+          </EmptyState>
         ) : null}
 
         {logs.length > 0 ? (
           <div className="record-list">
             {logs.map((log) => (
-              <article className="record-card" key={log.id}>
+              <Card as="article" className="record-card" key={log.id}>
                 <div className="record-card-header">
                   <div>
                     <h2>{log.question}</h2>
                     <p>{formatDate(log.createdAt)}</p>
                   </div>
-                  <span
-                    className={
-                      log.refusal
-                        ? "status-pill status-pill-warning"
-                        : "status-pill status-pill-ok"
-                    }
-                  >
+                  <Badge tone={log.refusal ? "warning" : "success"}>
                     {log.refusal ? "refused" : "answered"}
-                  </span>
+                  </Badge>
                 </div>
 
-                <dl className="record-metadata">
-                  <div>
-                    <dt>Confidence</dt>
-                    <dd>{formatConfidence(log.confidence)}</dd>
-                  </div>
-                  <div>
-                    <dt>Provider</dt>
-                    <dd>{log.provider}</dd>
-                  </div>
-                  <div>
-                    <dt>Latency</dt>
-                    <dd>{log.latencyMs}ms</dd>
-                  </div>
-                  <div>
-                    <dt>Retrieved</dt>
-                    <dd>{log.retrievedChunkCount}</dd>
-                  </div>
+                <dl className="metric-grid record-metrics">
+                  <MetricCard
+                    label="Confidence"
+                    value={formatConfidence(log.confidence)}
+                  />
+                  <MetricCard label="Provider" value={log.provider} />
+                  <MetricCard label="Latency" value={`${log.latencyMs}ms`} />
+                  <MetricCard
+                    label="Retrieved"
+                    value={log.retrievedChunkCount}
+                  />
                 </dl>
 
                 <Link className="text-link" href={`/query-logs/${log.id}`}>
                   View details
                 </Link>
-              </article>
+              </Card>
             ))}
           </div>
         ) : null}
-      </section>
+      </Card>
     </div>
   );
 }
