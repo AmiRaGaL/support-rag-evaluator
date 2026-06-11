@@ -42,6 +42,7 @@ The API ingests markdown support docs, chunks and embeds them, retrieves relevan
 ## Documentation
 
 - [Architecture](docs/architecture.md)
+- [Deployment readiness](docs/deployment.md)
 - [Demo script](docs/demo-script.md)
 - [Screenshot checklist](docs/screenshots.md)
 - [Roadmap and limitations](docs/roadmap.md)
@@ -163,6 +164,14 @@ The project includes a persisted baseline eval workflow for checking RAG behavio
 
 The deterministic provider keeps evals repeatable and CI-safe. Groq can be enabled locally for experimentation, but it is optional and not required for the default demo or tests.
 
+## CI and Quality Gates
+
+GitHub Actions validate the full-stack repository without requiring external API keys:
+
+- API: install dependencies, generate Prisma client, apply migrations against a CI Postgres service, lint, test, and build.
+- Web: install dependencies, lint, and build with `NEXT_PUBLIC_API_BASE_URL` configured.
+- Docker config: run static checks for the Compose services, expected host ports, deterministic API provider defaults, and web API base URL wiring without requiring a Docker daemon.
+
 ## Portfolio Highlights
 
 - Full-stack AI product surface: API, database, retrieval layer, evaluation workflow, and dashboard.
@@ -174,6 +183,7 @@ The deterministic provider keeps evals repeatable and CI-safe. Groq can be enabl
 ## Notes
 
 - Roadmap and known limitations are documented in [docs/roadmap.md](docs/roadmap.md).
+- Deployment readiness notes are documented in [docs/deployment.md](docs/deployment.md).
 - Production deployment is not included.
 - Authentication is not implemented.
 - Real API keys and local secrets should stay out of git.
