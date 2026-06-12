@@ -46,6 +46,7 @@ The API ingests markdown support docs, chunks and embeds them, retrieves relevan
 
 ## Documentation
 
+- [Project summary](docs/project-summary.md)
 - [Architecture](docs/architecture.md)
 - [Deployment readiness](docs/deployment.md)
 - [Demo script](docs/demo-script.md)
