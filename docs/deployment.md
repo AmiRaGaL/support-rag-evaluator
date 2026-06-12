@@ -61,7 +61,7 @@ For containerized server-side proxying, `API_BASE_URL` may also be used by the w
 
 ### Render, Railway, or Fly-Style API Hosting
 
-- Deploy `apps/api` as the API service root.
+- Deploy the API Docker image with the repository root as the build context and `apps/api/Dockerfile` as the Dockerfile path. The API image copies root-level `datasets` into `/app/datasets` for sample document ingestion and baseline evals.
 - Provide `DATABASE_URL`, `PORT`, `NODE_ENV=production`, `AUTH_ENABLED=true`, `API_AUTH_TOKEN`, and `LLM_PROVIDER=deterministic` unless Groq is intentionally enabled.
 - Run `npm ci`, `npx prisma generate`, and `npm run build` as part of the build.
 - Run Prisma migrations explicitly before serving production traffic.
