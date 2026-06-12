@@ -216,6 +216,8 @@ interface RequestOptions {
   body?: unknown;
 }
 
+const defaultFetch = globalThis.fetch.bind(globalThis);
+
 export interface GeneratedApiClientOptions {
   resolveUrl: (path: string) => string;
   fetchImpl?: typeof fetch;
@@ -238,7 +240,7 @@ export class GeneratedApiClient {
   private readonly fetchImpl: typeof fetch;
 
   constructor(private readonly options: GeneratedApiClientOptions) {
-    this.fetchImpl = options.fetchImpl ?? fetch;
+    this.fetchImpl = options.fetchImpl ?? defaultFetch;
   }
 
   getHealth() {

@@ -7,6 +7,7 @@
     "build": "next build",
     "generate:api-client": "node scripts/generate-api-client.mjs",
     "lint": "eslint .",
+    "test:api-client": "node scripts/test-api-client-fetch.mjs",
     "test:analytics": "node scripts/test-eval-analytics.mjs"
   },
   "dependencies": {
