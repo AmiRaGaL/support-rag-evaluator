@@ -61,7 +61,7 @@ describe('Docker configuration', () => {
     expect(dockerfile).toContain('npx prisma generate');
     expect(dockerfile).toContain('RUN npm run build');
     expect(dockerfile).toContain('EXPOSE 3001');
-    expect(dockerfile).toContain('CMD ["node", "dist/main.js"]');
+    expect(dockerfile).toContain('CMD ["node", "dist/src/main.js"]');
   });
 
   it('keeps the web Docker runtime file present for production builds', () => {
