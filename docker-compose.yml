@@ -16,7 +16,8 @@ services:
 
   api:
     build:
-      context: ./apps/api
+      context: .
+      dockerfile: apps/api/Dockerfile
       target: runtime
     container_name: support-rag-api
     restart: unless-stopped
@@ -36,7 +37,8 @@ services:
 
   api-migrate:
     build:
-      context: ./apps/api
+      context: .
+      dockerfile: apps/api/Dockerfile
       target: migrate
     profiles:
       - tools
