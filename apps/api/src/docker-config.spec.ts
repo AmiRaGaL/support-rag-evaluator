@@ -94,7 +94,10 @@ describe('Docker configuration', () => {
     expect(api).not.toContain('@localhost:');
     expect(api).toContain('NODE_ENV: production');
     expect(api).toContain('PORT: 3001');
+    expect(api).toContain('AUTH_ENABLED: "false"');
     expect(api).toContain('LLM_PROVIDER: deterministic');
+    expect(api).toContain('EMBEDDING_PROVIDER: deterministic');
+    expect(api).toContain('EVAL_JUDGE_PROVIDER: deterministic');
     expect(api).toContain('- "3001:3001"');
   });
 
@@ -135,6 +138,9 @@ describe('Docker configuration', () => {
     expect(migrate).toContain('- tools');
     expect(migrate).toContain('command: npm run prisma:migrate:deploy');
     expect(migrate).toContain('@postgres:5432');
+    expect(migrate).toContain('LLM_PROVIDER: deterministic');
+    expect(migrate).toContain('EMBEDDING_PROVIDER: deterministic');
+    expect(migrate).toContain('EVAL_JUDGE_PROVIDER: deterministic');
     expect(migrate).not.toContain('@localhost:');
   });
 });

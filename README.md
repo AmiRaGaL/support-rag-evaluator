@@ -49,6 +49,7 @@ The API ingests markdown support docs, chunks and embeds them, retrieves relevan
 - [Architecture](docs/architecture.md)
 - [Deployment readiness](docs/deployment.md)
 - [Demo script](docs/demo-script.md)
+- [Release checklist](docs/release-checklist.md)
 - [Screenshot checklist](docs/screenshots.md)
 - [Roadmap and limitations](docs/roadmap.md)
 - [Contributing](CONTRIBUTING.md)
