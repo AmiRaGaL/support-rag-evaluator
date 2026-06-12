@@ -1,298 +1,54 @@
-# Support RAG Evaluator
+# Hi, I am Deva Sai Kumar Bheesetti
 
-Support RAG Evaluator is an eval-driven RAG support assistant that answers from support documentation, returns grounded answers with citations, logs retrieval/query metadata, persists evaluation runs, and exposes the workflow through a full-stack dashboard.
+Software Engineer focused on backend, full-stack, data, and AI-enabled product development. I build production-ready systems with TypeScript, Python, NestJS, React, React Native, AWS, PostgreSQL, MongoDB, Docker, and modern AI tooling.
 
-## Features
+I enjoy building practical products that connect strong backend architecture with useful AI and data workflows. My recent work spans RAG systems, healthcare NLP, trust and safety platforms, mobile apps, cloud deployments, and data automation.
 
-- Markdown document ingestion for sample support documentation.
-- PostgreSQL + pgvector retrieval over embedded document chunks.
-- Grounded chat responses with citations and refusal behavior for unsupported questions.
-- Deterministic CI-safe LLM provider by default, with no API key required.
-- Optional Groq provider for local experimentation.
-- Optional token auth guard for API and dashboard demo protection.
-- Query logging for prompts, answers, retrieved chunks, citations, refusal status, latency, and evaluation metadata.
-- Persisted baseline eval runs with aggregate metrics, per-case results, and optional LLM-as-judge metadata.
-- Eval analytics dashboard with recent-run trend summaries.
-- Stable non-streaming chat plus streaming chat support.
-- Generated-style typed API client support for the web dashboard.
-- OpenAPI documentation through Swagger UI.
-- Next.js dashboard for setup actions, chat, query logs, and eval runs.
-- Docker Compose full-stack demo with Postgres, API, and web dashboard.
+[Portfolio](https://portfolio-deva-sai.vercel.app/) | [LinkedIn](https://www.linkedin.com/in/deva-sai-kumar-bheesetti-34380812b/) | [Email](mailto:devasai1259@gmail.com)
 
-## Tech Stack
+## What I am focused on
 
-- Backend: NestJS, TypeScript
-- Frontend: Next.js, React, TypeScript
-- Database: PostgreSQL with pgvector
-- ORM: Prisma
-- API docs: OpenAPI / Swagger UI
-- Local orchestration: Docker Compose
-- LLM providers: deterministic default provider, optional Groq OpenAI-compatible provider
-- Embedding providers: deterministic default provider, optional OpenAI-compatible provider
-- Testing: Jest for the API, ESLint for API and web
+- Backend and full-stack engineering with TypeScript, NestJS, Node.js, React, and Next.js
+- AI applications with RAG, LLMs, embeddings, evaluations, and citation-grounded responses
+- Data science and data engineering with Python, SQL, pandas, scikit-learn, PostgreSQL, and pgvector
+- Cloud and DevOps workflows using AWS, Docker, GitHub Actions, Vercel, Render, and Supabase
+- Healthcare NLP, explainable AI, active learning, and applied machine learning research
 
-## System Architecture
+## Featured projects
 
-```text
-User
-  -> Next.js dashboard (apps/web)
-  -> NestJS API (apps/api)
-  -> ingestion, retrieval, chat, query-log, and eval modules
-  -> Prisma
-  -> PostgreSQL + pgvector
-```
+| Project | What it demonstrates | Stack | Links |
+| --- | --- | --- | --- |
+| Support RAG Evaluator | RAG retrieval, grounded answers, citations, refusals, query logs, eval runs, and dashboard analytics | NestJS, Next.js, PostgreSQL, pgvector, Prisma, Docker | [Live](https://support-rag-evaluator.vercel.app/) / [Repo](https://github.com/AmiRaGaL/support-rag-evaluator) |
+| TrustOps Platform | Multi-tenant trust and safety workflows with RBAC, moderation queues, audit logs, and reviewer operations | NestJS, Next.js, PostgreSQL, Prisma, JWT, Docker | [Live](https://trustops-platform-web.vercel.app/) / [Repo](https://github.com/AmiRaGaL/trustops-platform) |
+| VitaScan | AI-powered health triage with RAG, symptom intake, contextual chat, red-flag handling, and health profiles | Next.js, React Native, NestJS, Supabase, pgvector, LangChain | [Live](https://vitascan-web-rho.vercel.app/) / [Repo](https://github.com/AmiRaGaL/vitascan) |
+| Clinical Survival Analysis Dashboard | Healthcare analytics using survival curves, Cox regression, statistical testing, and visual reporting | Python, Streamlit, survival analysis | [Repo](https://github.com/AmiRaGaL/clinical-survival-analysis-dashboard) |
+| Cancer Subtype Classification | ML pipeline for preprocessing, classification, evaluation, and Streamlit-based inference | Python, scikit-learn, Streamlit | [Repo](https://github.com/AmiRaGaL/cancer-subtype-classification-tcga-brca) |
 
-The API ingests markdown support docs, chunks and embeds them, retrieves relevant chunks with pgvector, builds grounded answers from retrieved context, attaches citations, logs each query, and stores eval run summaries/results. The dashboard provides a portfolio-friendly UI for exercising those flows.
+## Experience highlights
 
-## Documentation
+- Built production backend and mobile features at OurFreedom.AI using NestJS, TypeScript, MongoDB, React Native, AWS, Docker, and GitHub Actions.
+- Designed social graph, privacy, reporting, and moderation workflows, including follow, block, private profile, post reporting, profile reporting, and DM reporting flows.
+- Improved profile and social graph load time by 60 percent using MongoDB aggregation pipelines, targeted projections, and optimized response shapes.
+- Built healthcare NLP pipelines over 2,636 de-identified clinical notes using PyTorch, Hugging Face, Clinical Longformer, DeepSeek-R1, LLaMA 3.2, active learning, and explainability methods.
+- Automated reporting, grading, data collection, and dashboard workflows at UMass Lowell using Python, SQL, JavaScript, Google Apps Script, Docker, Selenium, Tableau, and Power BI.
+- Led enterprise automation and API integration work for Verizon systems at Infosys, including REST APIs, Oracle SQL, Kibana logging, production support, and team mentorship.
 
-- [Project summary](docs/project-summary.md)
-- [Architecture](docs/architecture.md)
-- [Deployment readiness](docs/deployment.md)
-- [Demo script](docs/demo-script.md)
-- [Release checklist](docs/release-checklist.md)
-- [Screenshot checklist](docs/screenshots.md)
-- [Roadmap and limitations](docs/roadmap.md)
-- [Contributing](CONTRIBUTING.md)
-- [Development guide](docs/development.md)
+## Technical skills
 
-## Local Quickstart
+**Languages:** Python, TypeScript, JavaScript, Java, SQL, C++, Bash  
+**Backend:** NestJS, Node.js, FastAPI, Flask, REST APIs, OpenAPI, JWT, Prisma  
+**Frontend and mobile:** React, Next.js, React Native, Expo, Zustand, HTML, CSS  
+**Data and AI:** PyTorch, Hugging Face, scikit-learn, LangChain, RAG, LLMs, pandas, NumPy, Captum, LIME  
+**Databases:** PostgreSQL, pgvector, MongoDB, MySQL, Oracle SQL, Supabase, Firebase  
+**Cloud and DevOps:** AWS EC2, AWS ECS, S3, Docker, Kubernetes, GitHub Actions, Jenkins, Vercel, Render, Linux  
+**Analytics:** Tableau, Power BI, Matplotlib, Seaborn, Plotly, Excel
 
-Start Postgres:
+## Current interests
 
-```bash
-docker compose up -d postgres
-```
+I am especially interested in roles where I can build reliable software systems that use data and AI in practical ways. My strongest fit is in backend engineering, full-stack engineering, data engineering, AI applications, RAG systems, and healthcare or trust and safety technology.
 
-Create `apps/api/.env` from the example values:
+## Contact
 
-```bash
-DATABASE_URL="postgresql://support_rag_user:support_rag_password@localhost:5433/support_rag_dev?schema=public"
-PORT=3001
-LLM_PROVIDER=deterministic
-```
-
-Run the API:
-
-```bash
-cd apps/api
-npm install
-npx prisma migrate dev
-npm run start:dev
-```
-
-Run the dashboard in another terminal:
-
-```bash
-cd apps/web
-npm install
-npm run dev
-```
-
-Open:
-
-- Dashboard: `http://localhost:3000`
-- API docs: `http://localhost:3001/docs`
-- API health: `http://localhost:3001/health`
-- Postgres: `localhost:5433`
-
-For local dashboard configuration, create `apps/web/.env.local` if needed:
-
-```bash
-NEXT_PUBLIC_API_BASE_URL=http://localhost:3001
-API_BASE_URL=http://localhost:3001
-```
-
-## Docker Compose Quickstart
-
-Run the full demo stack:
-
-```bash
-docker compose up --build -d
-docker compose --profile tools run --rm api-migrate
-```
-
-Open:
-
-- Dashboard: `http://localhost:3000`
-- API docs: `http://localhost:3001/docs`
-- API base URL: `http://localhost:3001`
-
-Compose runs Postgres with pgvector, the NestJS API, and the Next.js dashboard. Migrations are explicit through the `api-migrate` tool profile and are not run automatically by the API container.
-
-The Compose API service uses `LLM_PROVIDER=deterministic` by default, so no API key is required. To try Groq locally, set `LLM_PROVIDER=groq` and provide `GROQ_API_KEY` in your local environment. Do not commit real API keys or local `.env` files.
-
-Demo flow:
-
-1. Open the dashboard.
-2. Click **Ingest sample docs**.
-3. Click **Embed missing chunks**.
-4. Ask a grounded support question such as "Can I export billing history?"
-5. Inspect Query Logs for retrieval metadata, citations, latency, and refusal behavior.
-6. Run the baseline eval and review Eval Runs.
-
-## Embedding Providers
-
-Deterministic embeddings are the default. They are stable, local, and useful for demos, tests, and CI because they do not require external API keys or network calls.
-
-Real embeddings can be enabled through API environment variables:
-
-| Variable | Notes |
-| --- | --- |
-| `EMBEDDING_PROVIDER` | Defaults to `deterministic`. Set to `openai` for the implemented OpenAI-compatible provider. |
-| `EMBEDDING_API_KEY` | Required only when `EMBEDDING_PROVIDER=openai`. Store real keys in local or managed secrets, never in git. |
-| `EMBEDDING_MODEL` | Optional model override for the real provider. The default is suitable for the current 1536-dimensional schema. |
-| `EMBEDDING_DIMENSIONS` | Must match the pgvector column dimension, currently `1536` for `DocumentChunk.embedding vector(1536)`. |
-| `EMBEDDING_BASE_URL` | Optional OpenAI-compatible base URL override, if using a compatible endpoint. |
-
-Changing embedding providers usually requires re-embedding documents so stored chunk vectors and query vectors come from the same embedding space.
-
-Re-embedding workflow:
-
-1. Configure the embedding provider environment variables.
-2. Run migrations if the database schema changed.
-3. Ingest sample docs if chunks are missing.
-4. Run `POST /retrieval/embed-missing` from Swagger or the dashboard setup action.
-5. Test `POST /retrieval/search` with a known support question.
-6. Test `POST /chat` and inspect citations and retrieved chunks.
-
-Troubleshooting:
-
-- Missing API key: `EMBEDDING_API_KEY` is required only for `EMBEDDING_PROVIDER=openai`.
-- Dimension mismatch: keep `EMBEDDING_DIMENSIONS` aligned with `DocumentChunk.embedding vector(1536)`, or migrate the pgvector column before changing dimensions.
-- No retrieved chunks: ingest docs, run embed-missing, and confirm existing chunks were embedded with the same provider now used for queries.
-- Provider accidentally set in CI: leave `EMBEDDING_PROVIDER` unset or set it to `deterministic`; CI should not need external keys.
-- External provider unavailable: switch back to deterministic for local demos/CI, or retry once the provider is healthy.
-
-## Optional Auth Guard
-
-Auth is disabled by default so local development, Docker Compose demos, and CI behave without secrets. Before exposing the API or dashboard beyond a local demo, enable the simple token guard:
-
-| Variable | App | Notes |
-| --- | --- | --- |
-| `AUTH_ENABLED` | API | Defaults to `false`. Set to `true` to require a token for protected API routes. |
-| `API_AUTH_TOKEN` | API and web server proxy | Shared token used as `Authorization: Bearer <token>` or `x-api-key`. Store real values in local or managed secrets. |
-| `NEXT_PUBLIC_API_AUTH_TOKEN` | Web browser client | Optional local/demo fallback only. Because `NEXT_PUBLIC_*` values are visible in browser JavaScript, do not use this for real secrets. |
-
-When enabled, the guard protects operational routes such as chat, streaming chat, retrieval, ingestion, query logs, and evals. Public routes such as `GET /health` and Swagger docs at `GET /docs` remain public in the current implementation.
-
-This is simple API token protection, not OAuth, login, roles, sessions, or full user management.
-
-## Dashboard Auth Behavior
-
-The dashboard calls the API through its same-origin proxy. For non-demo deployments, set `API_AUTH_TOKEN` in the web runtime so the proxy can attach the bearer token server-side. If the API returns `401`, dashboard pages show a friendly authentication error instead of a generic request failure.
-
-When `AUTH_ENABLED=false`, the dashboard works as before and does not need any token.
-
-## API Endpoint Summary
-
-- `GET /health` - API health check.
-- `POST /ingestion/sample-docs` - ingest bundled sample markdown docs.
-- `POST /retrieval/embed-missing` - create embeddings for chunks that do not have them.
-- `POST /retrieval/search` - search embedded support docs.
-- `GET /retrieval/search` - search support docs with query parameters.
-- `POST /chat` - stable non-streaming chat endpoint for grounded answers, citations, and refusals.
-- `POST /chat/stream` - streaming chat endpoint that emits answer text incrementally and finishes with response metadata.
-- `GET /query-logs` - list recent query logs.
-- `GET /query-logs/:id` - inspect a single query log.
-- `GET /evals/runs` - list persisted eval runs.
-- `GET /evals/runs/:id` - inspect eval run metrics and case results.
-- `POST /evals/run-baseline` - run the baseline evaluation suite.
-- `GET /docs` - Swagger UI / OpenAPI documentation.
-
-## Dashboard Overview
-
-The Next.js dashboard lives in `apps/web` and focuses on the main support RAG workflow:
-
-- Overview: API health, setup actions, and workflow links.
-- Chat: grounded question form with streaming answer text, final citations/refusal metadata, confidence, and retrieved chunks. If streaming fails, the page falls back to the stable non-streaming `POST /chat` path.
-- Query Logs: recent logs plus detail views for answers, citations, retrieval, latency, and refusal status.
-- Eval Runs: baseline eval trigger, run history, aggregate metrics, eval trend summaries, and per-case results.
-
-Dashboard actions are user-triggered. The app does not ingest docs, embed chunks, or run evals automatically on page load.
-
-For portfolio capture guidance, see the screenshot checklist in [docs/screenshots.md](docs/screenshots.md).
-
-## Generated-Style Web API Client
-
-The web app wraps a checked-in generated-style client at `apps/web/lib/api-client.generated.ts`. It keeps dashboard API calls typed without adding a heavy generator dependency to CI.
-
-To validate the client against the local OpenAPI document when the API is running:
-
-```bash
-cd apps/web
-npm run generate:api-client
-```
-
-If `http://localhost:3001/docs-json` is unavailable, the script keeps the checked-in client unchanged. This is intentional so local development and CI do not require external services or API keys.
-
-## Streaming Chat
-
-`POST /chat` remains the stable non-streaming endpoint and keeps the existing response shape. Use it for simple integrations, tests, and fallback behavior.
-
-`POST /chat/stream` returns server-sent events. The deterministic provider streams a CI-safe fallback by chunking the final deterministic answer. When Groq is configured through `LLM_PROVIDER=groq` and local Groq credentials, the same endpoint still works by chunking the final Groq answer; native Groq token streaming is not required for this phase.
-
-The stream sends incremental answer text and then a final completion event with the final chat response plus confidence and retrieved chunk metadata. Answered responses include citations; refusals include refusal metadata and no citations, matching the normal chat contract.
-
-## Evaluation
-
-The project includes a persisted baseline eval workflow for checking RAG behavior over known support cases. Eval runs track aggregate and per-case signals such as:
-
-- Retrieval quality
-- Answer quality
-- Citation faithfulness
-- Refusal behavior
-- Latency metadata
-
-The deterministic provider keeps evals repeatable and CI-safe. Groq can be enabled locally for experimentation, but it is optional and not required for the default demo or tests.
-
-### Optional LLM-As-Judge Mode
-
-Deterministic eval scoring remains the default. Optional LLM-as-judge scoring is controlled by `EVAL_JUDGE_PROVIDER`:
-
-| Variable | Notes |
-| --- | --- |
-| `EVAL_JUDGE_PROVIDER` | Defaults to `deterministic`. Set to `groq` only when you explicitly want Groq judge scoring. |
-| `GROQ_API_KEY` | Required only when `EVAL_JUDGE_PROVIDER=groq` or `LLM_PROVIDER=groq`. Store it in managed secrets or local env files. |
-| `GROQ_CHAT_MODEL` | Optional Groq model override for LLM and judge providers. |
-| `GROQ_BASE_URL` | Optional OpenAI-compatible Groq base URL override. |
-
-Judge prompts request strict JSON with score, pass/fail, reasoning, and dimensions for groundedness, answer correctness, citation support, and refusal behavior. Judge output is validated before persistence. Invalid or malformed judge output fails safely as a failed eval case with a clear judge failure reason. CI should leave judge mode deterministic and does not require `GROQ_API_KEY`.
-
-Recent eval runs are also summarized in the dashboard with total, passed, and failed cases plus refusal, citation, and answer-match accuracy trends. If there are no eval runs yet, run the baseline eval from the dashboard or call `POST /evals/run-baseline`.
-
-## Troubleshooting
-
-- **API unavailable:** Check `http://localhost:3001/health`, confirm the API process or Compose service is running, and verify `NEXT_PUBLIC_API_BASE_URL` / `API_BASE_URL`.
-- **401 unauthorized:** If `AUTH_ENABLED=true`, send `Authorization: Bearer <token>` or `x-api-key` with the value from `API_AUTH_TOKEN`. Do not paste real tokens into issues, screenshots, or commits.
-- **Dashboard token missing:** Set `API_AUTH_TOKEN` in the web runtime so the dashboard proxy can attach the token server-side. Use `NEXT_PUBLIC_API_AUTH_TOKEN` only for local/demo cases where a browser-visible token is acceptable.
-- **Streaming unsupported or unavailable:** Use the dashboard fallback or call `POST /chat`. The deterministic provider is safe for local/CI streaming; provider-specific streaming behavior depends on local configuration and should remain optional.
-- **No eval runs yet:** Run the baseline eval from the dashboard or call `POST /evals/run-baseline`.
-- **Judge mode missing API key:** `GROQ_API_KEY` is required only when `EVAL_JUDGE_PROVIDER=groq`. Set `EVAL_JUDGE_PROVIDER=deterministic` for local/CI-safe runs.
-- **Invalid judge output:** Malformed judge JSON is treated as a failed eval case with judge reasoning that explains the validation failure.
-- **CI accidentally uses a real provider:** Keep `LLM_PROVIDER`, `EMBEDDING_PROVIDER`, and `EVAL_JUDGE_PROVIDER` unset or set to deterministic in CI unless secrets are intentionally configured for a separate non-default workflow.
-- **Generated client out of date:** Start the API locally, then run `cd apps/web && npm run generate:api-client` to validate the checked-in client against OpenAPI.
-
-## CI and Quality Gates
-
-GitHub Actions validate the full-stack repository without requiring external API keys:
-
-- API: install dependencies, generate Prisma client, apply migrations against a CI Postgres service, lint, test, and build.
-- Web: install dependencies, lint, and build with `NEXT_PUBLIC_API_BASE_URL` configured.
-- Docker config: run static checks for the Compose services, expected host ports, deterministic API provider defaults, and web API base URL wiring without requiring a Docker daemon.
-
-## Portfolio Highlights
-
-- Full-stack AI product surface: API, database, retrieval layer, evaluation workflow, and dashboard.
-- Grounding-first behavior: answers are tied to retrieved support docs and citations instead of open-ended chatbot output.
-- Operational observability: query logs capture retrieved context, answer metadata, latency, and refusal behavior for inspection.
-- Evaluation discipline: persisted eval runs make quality measurable across retrieval, answer, citation, and refusal behavior.
-- Production-minded local demo: Docker Compose starts the app stack with explicit migrations and safe default providers, without requiring secrets.
-
-## Notes
-
-- Roadmap and known limitations are documented in [docs/roadmap.md](docs/roadmap.md).
-- Deployment readiness notes are documented in [docs/deployment.md](docs/deployment.md).
-- Production deployment is not included.
-- Optional token auth is implemented, but full user management is not.
-- Real API keys and local secrets should stay out of git.
+- Portfolio: https://portfolio-deva-sai.vercel.app/
+- LinkedIn: https://www.linkedin.com/in/deva-sai-kumar-bheesetti-34380812b/
+- Email: devasai1259@gmail.com
