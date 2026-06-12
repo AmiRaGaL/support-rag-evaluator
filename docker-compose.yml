@@ -24,7 +24,10 @@ services:
       DATABASE_URL: postgresql://support_rag_user:support_rag_password@postgres:5432/support_rag_dev?schema=public
       NODE_ENV: production
       PORT: 3001
+      AUTH_ENABLED: "false"
       LLM_PROVIDER: deterministic
+      EMBEDDING_PROVIDER: deterministic
+      EVAL_JUDGE_PROVIDER: deterministic
     ports:
       - "3001:3001"
     depends_on:
@@ -41,6 +44,8 @@ services:
       DATABASE_URL: postgresql://support_rag_user:support_rag_password@postgres:5432/support_rag_dev?schema=public
       NODE_ENV: production
       LLM_PROVIDER: deterministic
+      EMBEDDING_PROVIDER: deterministic
+      EVAL_JUDGE_PROVIDER: deterministic
     depends_on:
       postgres:
         condition: service_healthy

@@ -178,6 +178,26 @@ For refusal behavior, ask an unsupported question such as:
 - `Can I export audit logs?`
 - `How do I configure SSO?`
 
+## Smoke Test
+
+Use this shorter pass when you only need to confirm the release candidate still works end to end:
+
+```bash
+docker compose up --build -d
+docker compose --profile tools run --rm api-migrate
+```
+
+Then verify:
+
+- Dashboard opens at `http://localhost:3000`.
+- API health returns successfully at `http://localhost:3001/health`.
+- OpenAPI docs load at `http://localhost:3001/docs`.
+- Ingest sample docs and embed missing chunks from the dashboard.
+- Ask `Can I export billing history?` and confirm an answer with citations.
+- Ask `How do I configure SSO?` and confirm the assistant refuses.
+- Inspect Query Logs for the latest chat request.
+- Run the baseline eval and inspect Eval Runs analytics.
+
 ## Troubleshooting
 
 - **API unavailable:** Confirm `docker compose ps` shows the API running, then check `http://localhost:3001/health`. If needed, review API logs with `docker compose logs api`.

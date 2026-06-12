@@ -73,6 +73,20 @@ For containerized server-side proxying, `API_BASE_URL` may also be used by the w
 - Enable the `pgvector` extension before applying migrations if the provider does not do so automatically.
 - Keep database credentials in managed secrets.
 
+### Manual Production Migrations
+
+Production Prisma migrations can be run from GitHub Actions when a Render shell is not available. Configure a repository or environment secret named `SUPABASE_DATABASE_URL` with the production Supabase Postgres connection string, then manually run the **Deploy production migrations** workflow from the GitHub Actions tab.
+
+The workflow is triggered only with `workflow_dispatch`, runs from `apps/api`, and executes:
+
+```bash
+npm ci
+npx prisma generate
+npx prisma migrate deploy
+```
+
+Do not use `prisma migrate dev` or `prisma migrate reset` against production. The workflow does not echo `DATABASE_URL`; keep database credentials in GitHub Actions secrets and avoid pasting them into logs, issues, screenshots, or docs.
+
 ## Database Notes
 
 - PostgreSQL is required.
