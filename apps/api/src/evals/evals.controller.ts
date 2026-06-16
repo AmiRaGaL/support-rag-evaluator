@@ -88,7 +88,7 @@ export class EvalsController {
   @ApiOperation({
     summary: 'Run the baseline evaluation',
     description:
-      'Ingests sample docs, embeds missing chunks, runs the baseline eval dataset, and persists the result. The deterministic provider is the default; Groq is optional only when explicitly configured.',
+      'Ingests sample docs, embeds missing chunks, runs the baseline eval dataset with the configured RAG providers, and persists the result. Eval judging remains deterministic unless Groq judge mode is explicitly configured.',
   })
   @ApiCreatedResponse({
     description: 'Runs the baseline eval dataset and persists the result.',

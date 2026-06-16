@@ -82,7 +82,7 @@ describe('Docker configuration', () => {
     expect(dockerfile).toContain('CMD ["node", "server.js"]');
   });
 
-  it('defines an API service with deterministic, service-host defaults', () => {
+  it('defines an API service with GenAI RAG demo defaults', () => {
     const compose = readText(composePath);
     const api = serviceBlock(compose, 'api');
 
@@ -95,8 +95,19 @@ describe('Docker configuration', () => {
     expect(api).toContain('NODE_ENV: production');
     expect(api).toContain('PORT: 3001');
     expect(api).toContain('AUTH_ENABLED: "false"');
-    expect(api).toContain('LLM_PROVIDER: deterministic');
-    expect(api).toContain('EMBEDDING_PROVIDER: deterministic');
+    expect(api).toContain('LLM_PROVIDER: groq');
+    expect(api).toContain('GROQ_API_KEY: ${GROQ_API_KEY}');
+    expect(api).toContain(
+      'GROQ_CHAT_MODEL: ${GROQ_CHAT_MODEL:-llama-3.1-8b-instant}',
+    );
+    expect(api).toContain('EMBEDDING_PROVIDER: openai');
+    expect(api).toContain('EMBEDDING_API_KEY: ${EMBEDDING_API_KEY}');
+    expect(api).toContain(
+      'EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}',
+    );
+    expect(api).toContain(
+      'EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-1536}',
+    );
     expect(api).toContain('EVAL_JUDGE_PROVIDER: deterministic');
     expect(api).toContain('- "3001:3001"');
   });

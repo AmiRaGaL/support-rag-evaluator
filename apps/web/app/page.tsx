@@ -114,10 +114,14 @@ async function HealthPanel() {
         <h2>Connected</h2>
         <p>
           Service {health.data.service} reports {health.data.status}. Database
-          status is {health.data.database}.
+          status is {health.data.database}. RAG mode is{" "}
+          {health.data.ragMode} with {health.data.llmProvider} answers and{" "}
+          {health.data.embeddingProvider} embeddings.
         </p>
       </div>
-      <Badge tone="success">{health.data.database}</Badge>
+      <Badge tone={health.data.ragMode === "genai" ? "success" : "warning"}>
+        {health.data.ragMode}
+      </Badge>
     </Card>
   );
 }

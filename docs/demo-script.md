@@ -43,7 +43,7 @@ docker compose --profile tools run --rm api-migrate
 
 - Docker Compose starts Postgres with pgvector, the API, and the web dashboard.
 - Migrations are explicit so the database lifecycle is visible.
-- The API defaults to `LLM_PROVIDER=deterministic`, so this demo does not need secrets or a network LLM call.
+- The API demo runs real GenAI RAG with `LLM_PROVIDER=groq` and `EMBEDDING_PROVIDER=openai`, so it needs `GROQ_API_KEY` and `EMBEDDING_API_KEY` in the local environment.
 
 ## 4. Open The Dashboard
 
@@ -70,6 +70,7 @@ http://localhost:3001/health
 **Talking points:**
 
 - This confirms the dashboard can reach the API.
+- The default demo should report `ragMode: genai`.
 - The API is running on port `3001`; the dashboard is running on port `3000`.
 - If health fails, the rest of the demo should pause for troubleshooting.
 
@@ -201,9 +202,9 @@ Then verify:
 ## Troubleshooting
 
 - **API unavailable:** Confirm `docker compose ps` shows the API running, then check `http://localhost:3001/health`. If needed, review API logs with `docker compose logs api`.
-- **Streaming unavailable:** Use the same question again; the dashboard keeps the non-streaming `POST /chat` path available as fallback. The deterministic provider remains the safest default for demos and CI.
+- **Streaming unavailable:** Use the same question again; the dashboard keeps the non-streaming `POST /chat` path available as fallback. The deterministic provider remains available for offline fallback and CI.
 - **No query logs yet:** Ask a chat question first. Query logs are created by the `/chat` flow.
 - **No eval runs yet:** Click **Run baseline eval** from the dashboard, or call `POST /evals/run-baseline`.
 - **Generated client out of date:** Start the API and run `cd apps/web && npm run generate:api-client` to validate the checked-in client against OpenAPI.
 - **Missing embeddings:** Click **Embed missing chunks** after ingesting sample docs. Retrieval needs embedded chunks to return grounded context.
-- **Groq env not configured:** Leave the default deterministic provider enabled. Only set `LLM_PROVIDER=groq` when a local `GROQ_API_KEY` is configured outside git.
+- **Provider env not configured:** Set `GROQ_API_KEY` and `EMBEDDING_API_KEY` outside git for the default demo, or explicitly set `LLM_PROVIDER=deterministic` and `EMBEDDING_PROVIDER=deterministic` for offline fallback.

@@ -1,6 +1,9 @@
 import { ConfigService } from '@nestjs/config';
 import { EMBEDDING_DIMENSIONS } from './embedding-provider.interface';
-import { createEmbeddingProvider } from './embeddings.module';
+import {
+  createEmbeddingProvider,
+  resolveEmbeddingProviderName,
+} from './embeddings.module';
 import { FakeEmbeddingProvider } from './fake-embedding.provider';
 import { OpenAiEmbeddingProvider } from './openai-embedding.provider';
 
@@ -25,13 +28,27 @@ function getConfigKeys(get: jest.Mock): string[] {
 }
 
 describe('createEmbeddingProvider', () => {
-  it('defaults to deterministic without reading EMBEDDING_API_KEY', () => {
-    const { configService, get } = configServiceFor({});
+  it('defaults to deterministic in test without reading EMBEDDING_API_KEY', () => {
+    const { configService, get } = configServiceFor({
+      NODE_ENV: 'test',
+    });
 
     const provider = createEmbeddingProvider(configService);
 
     expect(provider).toBeInstanceOf(FakeEmbeddingProvider);
     expect(getConfigKeys(get)).not.toContain('EMBEDDING_API_KEY');
+  });
+
+  it('defaults to OpenAI outside test', () => {
+    const { configService, get } = configServiceFor({
+      NODE_ENV: 'production',
+      EMBEDDING_API_KEY: 'test_embedding_key',
+    });
+
+    const provider = createEmbeddingProvider(configService);
+
+    expect(provider).toBeInstanceOf(OpenAiEmbeddingProvider);
+    expect(getConfigKeys(get)).toContain('EMBEDDING_API_KEY');
   });
 
   it('uses deterministic for explicit deterministic provider values', () => {
@@ -68,6 +85,16 @@ describe('createEmbeddingProvider', () => {
 
     expect(() => createEmbeddingProvider(configService)).toThrow(
       'EMBEDDING_API_KEY is required when EMBEDDING_PROVIDER=openai.',
+    );
+  });
+
+  it('fails clearly for unsupported provider values', () => {
+    const { configService } = configServiceFor({
+      EMBEDDING_PROVIDER: 'wat',
+    });
+
+    expect(() => resolveEmbeddingProviderName(configService)).toThrow(
+      'Unsupported EMBEDDING_PROVIDER=wat. Supported values: deterministic, openai.',
     );
   });
 

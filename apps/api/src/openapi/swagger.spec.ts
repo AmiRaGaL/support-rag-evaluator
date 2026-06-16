@@ -1,4 +1,5 @@
 import { INestApplication } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { App } from 'supertest/types';
 import { ChatController } from '../chat/chat.controller';
@@ -33,6 +34,14 @@ describe('OpenAPI documentation', () => {
           provide: PrismaService,
           useValue: {
             $queryRaw: jest.fn(),
+          },
+        },
+        {
+          provide: ConfigService,
+          useValue: {
+            get: jest.fn((key: string) =>
+              key === 'NODE_ENV' ? 'test' : undefined,
+            ),
           },
         },
         {

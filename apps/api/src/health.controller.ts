@@ -5,7 +5,10 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
+import { ConfigService } from '@nestjs/config';
+import { resolveEmbeddingProviderName } from './embeddings/embeddings.module';
 import { HealthResponseDto } from './health-response.dto';
+import { resolveLlmProviderName } from './llm/llm.module';
 import { PrismaService } from './prisma/prisma.service';
 import { Public } from './auth/public.decorator';
 
@@ -13,7 +16,10 @@ import { Public } from './auth/public.decorator';
 @Public()
 @Controller('health')
 export class HealthController {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
+  ) {}
 
   @Get()
   @ApiOperation({
@@ -30,11 +36,19 @@ export class HealthController {
   })
   async getHealth() {
     await this.prisma.$queryRaw`SELECT 1`;
+    const llmProvider = resolveLlmProviderName(this.configService);
+    const embeddingProvider = resolveEmbeddingProviderName(this.configService);
 
     return {
       status: 'ok',
       service: 'support-rag-api',
       database: 'ok',
+      llmProvider,
+      embeddingProvider,
+      ragMode:
+        llmProvider === 'groq' && embeddingProvider === 'openai'
+          ? 'genai'
+          : 'deterministic',
       timestamp: new Date().toISOString(),
     };
   }

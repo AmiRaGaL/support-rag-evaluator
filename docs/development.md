@@ -100,8 +100,8 @@ Open:
 
 - Use `.env.example` files as templates.
 - Do not commit real `.env` files, API keys, or secrets.
-- Keep `LLM_PROVIDER=deterministic` for normal local development and CI-safe behavior.
-- Set `LLM_PROVIDER=groq` only when intentionally testing Groq with a local `GROQ_API_KEY`.
+- Normal app/demo mode defaults to `LLM_PROVIDER=groq` and `EMBEDDING_PROVIDER=openai` outside `NODE_ENV=test`; configure `GROQ_API_KEY` and `EMBEDDING_API_KEY` for that path.
+- Use `NODE_ENV=test` or explicit deterministic providers for offline fallback and CI-safe behavior.
 
 ## Before Opening A PR
 

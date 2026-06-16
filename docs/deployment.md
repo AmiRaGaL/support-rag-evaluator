@@ -26,12 +26,12 @@ Required API environment variables:
 | `NODE_ENV` | Yes | Use `production` for hosted production. |
 | `AUTH_ENABLED` | Recommended for public deployments | Defaults to `false`. Set to `true` before exposing protected API routes beyond local demos. |
 | `API_AUTH_TOKEN` | Required when auth is enabled | Shared token for bearer/API-key auth. Store it in managed secrets. |
-| `LLM_PROVIDER` | Yes | Use `deterministic` by default. Set to `groq` only when a Groq key is configured. |
+| `LLM_PROVIDER` | Recommended | Defaults to `groq` outside `NODE_ENV=test`; defaults to `deterministic` in tests. Set explicitly for clarity. |
 | `GROQ_API_KEY` | Only for Groq | Required when `LLM_PROVIDER=groq` or `EVAL_JUDGE_PROVIDER=groq`. Store it in managed secrets. |
 | `GROQ_CHAT_MODEL` | Optional | Used only with Groq when overriding the provider or judge default. |
 | `GROQ_BASE_URL` | Optional | OpenAI-compatible Groq base URL override. |
 | `EVAL_JUDGE_PROVIDER` | Optional | Defaults to `deterministic`. Set to `groq` only when LLM-as-judge evals are intentionally enabled. |
-| `EMBEDDING_PROVIDER` | Optional | Defaults to `deterministic`. Set to `openai` only when real embeddings are intentionally enabled. |
+| `EMBEDDING_PROVIDER` | Recommended | Defaults to `openai` outside `NODE_ENV=test`; defaults to `deterministic` in tests. Set explicitly for clarity. |
 | `EMBEDDING_API_KEY` | Only for OpenAI embeddings | Required when `EMBEDDING_PROVIDER=openai`. Store it in managed secrets. |
 | `EMBEDDING_MODEL` | Optional | Used only with the real embedding provider when overriding the provider default. |
 | `EMBEDDING_DIMENSIONS` | Optional | Must match the pgvector column dimension, currently `1536`. |
@@ -62,7 +62,7 @@ For containerized server-side proxying, `API_BASE_URL` may also be used by the w
 ### Render, Railway, or Fly-Style API Hosting
 
 - Deploy `apps/api` as the API service root.
-- Provide `DATABASE_URL`, `PORT`, `NODE_ENV=production`, `AUTH_ENABLED=true`, `API_AUTH_TOKEN`, and `LLM_PROVIDER=deterministic` unless Groq is intentionally enabled.
+- Provide `DATABASE_URL`, `PORT`, `NODE_ENV=production`, `AUTH_ENABLED=true`, `API_AUTH_TOKEN`, `LLM_PROVIDER=groq`, `GROQ_API_KEY`, `EMBEDDING_PROVIDER=openai`, and `EMBEDDING_API_KEY` for the real GenAI RAG path.
 - Run `npm ci`, `npx prisma generate`, and `npm run build` as part of the build.
 - Run Prisma migrations explicitly before serving production traffic.
 - Confirm embedding dimensions match the deployed pgvector schema before embedding documents.

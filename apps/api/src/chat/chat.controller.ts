@@ -23,7 +23,7 @@ export class ChatController {
   @ApiOperation({
     summary: 'Answer a support question from retrieved docs',
     description:
-      'Retrieves support documentation and returns a grounded answer with citations, or refuses unsupported questions. The deterministic provider is the default; Groq is optional only when explicitly configured.',
+      'Retrieves support documentation and returns a grounded answer with citations, or refuses unsupported questions. Groq is the default outside tests; deterministic remains available for CI and offline fallback.',
   })
   @ApiCreatedResponse({
     description:
@@ -48,7 +48,7 @@ export class ChatController {
   @ApiOperation({
     summary: 'Stream a support answer from retrieved docs',
     description:
-      'Streams answer text as server-sent events, then sends a final complete event containing the unchanged chat response shape, confidence, citations, refusal metadata, and retrieved chunks. The deterministic provider chunks the final answer for CI-safe streaming; Groq remains optional when explicitly configured.',
+      'Streams answer text as server-sent events, then sends a final complete event containing the unchanged chat response shape, confidence, citations, refusal metadata, and retrieved chunks. The selected provider produces the final answer; deterministic chunks that answer for CI-safe fallback streaming.',
   })
   @ApiProduces('text/event-stream')
   @ApiOkResponse({

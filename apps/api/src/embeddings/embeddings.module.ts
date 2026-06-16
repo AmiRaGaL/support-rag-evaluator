@@ -9,12 +9,38 @@ import { EmbeddingsService } from './embeddings.service';
 import { FakeEmbeddingProvider } from './fake-embedding.provider';
 import { OpenAiEmbeddingProvider } from './openai-embedding.provider';
 
+export type EmbeddingProviderName = 'deterministic' | 'openai';
+
+export function resolveEmbeddingProviderName(
+  configService: ConfigService,
+): EmbeddingProviderName {
+  const configuredProvider = configService
+    .get<string>('EMBEDDING_PROVIDER')
+    ?.trim()
+    .toLowerCase();
+
+  if (!configuredProvider) {
+    return configService.get<string>('NODE_ENV') === 'test'
+      ? 'deterministic'
+      : 'openai';
+  }
+
+  if (
+    configuredProvider === 'deterministic' ||
+    configuredProvider === 'openai'
+  ) {
+    return configuredProvider;
+  }
+
+  throw new Error(
+    `Unsupported EMBEDDING_PROVIDER=${configuredProvider}. Supported values: deterministic, openai.`,
+  );
+}
+
 export function createEmbeddingProvider(
   configService: ConfigService,
 ): EmbeddingProvider {
-  const provider =
-    configService.get<string>('EMBEDDING_PROVIDER')?.trim().toLowerCase() ??
-    'deterministic';
+  const provider = resolveEmbeddingProviderName(configService);
   const dimensions = parseEmbeddingDimensions(
     configService.get<string | number>('EMBEDDING_DIMENSIONS'),
   );
