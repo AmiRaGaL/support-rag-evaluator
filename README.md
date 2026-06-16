@@ -120,7 +120,7 @@ Open:
 
 Compose runs Postgres with pgvector, the NestJS API, and the Next.js dashboard. Migrations are explicit through the `api-migrate` tool profile and are not run automatically by the API container.
 
-The Compose API service uses `LLM_PROVIDER=deterministic` by default, so no API key is required. To try Groq locally, set `LLM_PROVIDER=groq` and provide `GROQ_API_KEY` in your local environment. Do not commit real API keys or local `.env` files.
+The Compose API service runs the real GenAI RAG path by default with `LLM_PROVIDER=groq` and `EMBEDDING_PROVIDER=openai`. Provide `GROQ_API_KEY` and `EMBEDDING_API_KEY` in your local environment before starting the demo. Set both providers to `deterministic` only for offline fallback, tests, or CI. Do not commit real API keys or local `.env` files.
 
 Demo flow:
 
@@ -133,14 +133,14 @@ Demo flow:
 
 ## Embedding Providers
 
-Deterministic embeddings are the default. They are stable, local, and useful for demos, tests, and CI because they do not require external API keys or network calls.
+OpenAI-compatible embeddings are the default outside `NODE_ENV=test`. Deterministic embeddings remain available for tests, CI, and offline fallback because they do not require external API keys or network calls.
 
-Real embeddings can be enabled through API environment variables:
+Embedding provider behavior is configured through API environment variables:
 
 | Variable | Notes |
 | --- | --- |
-| `EMBEDDING_PROVIDER` | Defaults to `deterministic`. Set to `openai` for the implemented OpenAI-compatible provider. |
-| `EMBEDDING_API_KEY` | Required only when `EMBEDDING_PROVIDER=openai`. Store real keys in local or managed secrets, never in git. |
+| `EMBEDDING_PROVIDER` | Defaults to `openai` outside `NODE_ENV=test`; defaults to `deterministic` in tests. Explicit `deterministic` keeps offline fallback available. |
+| `EMBEDDING_API_KEY` | Required when the effective provider is `openai`. Store real keys in local or managed secrets, never in git. |
 | `EMBEDDING_MODEL` | Optional model override for the real provider. The default is suitable for the current 1536-dimensional schema. |
 | `EMBEDDING_DIMENSIONS` | Must match the pgvector column dimension, currently `1536` for `DocumentChunk.embedding vector(1536)`. |
 | `EMBEDDING_BASE_URL` | Optional OpenAI-compatible base URL override, if using a compatible endpoint. |
@@ -158,11 +158,11 @@ Re-embedding workflow:
 
 Troubleshooting:
 
-- Missing API key: `EMBEDDING_API_KEY` is required only for `EMBEDDING_PROVIDER=openai`.
+- Missing API key: `EMBEDDING_API_KEY` is required when the effective provider is `openai`.
 - Dimension mismatch: keep `EMBEDDING_DIMENSIONS` aligned with `DocumentChunk.embedding vector(1536)`, or migrate the pgvector column before changing dimensions.
 - No retrieved chunks: ingest docs, run embed-missing, and confirm existing chunks were embedded with the same provider now used for queries.
-- Provider accidentally set in CI: leave `EMBEDDING_PROVIDER` unset or set it to `deterministic`; CI should not need external keys.
-- External provider unavailable: switch back to deterministic for local demos/CI, or retry once the provider is healthy.
+- Provider accidentally set in CI: run with `NODE_ENV=test` or set `EMBEDDING_PROVIDER=deterministic`; CI should not need external keys.
+- External provider unavailable: switch back to deterministic for local fallback/CI, or retry once the provider is healthy.
 
 ## Optional Auth Guard
 
@@ -186,7 +186,7 @@ When `AUTH_ENABLED=false`, the dashboard works as before and does not need any t
 
 ## API Endpoint Summary
 
-- `GET /health` - API health check.
+- `GET /health` - API/database health plus effective `llmProvider`, `embeddingProvider`, and `ragMode`.
 - `POST /ingestion/sample-docs` - ingest bundled sample markdown docs.
 - `POST /retrieval/embed-missing` - create embeddings for chunks that do not have them.
 - `POST /retrieval/search` - search embedded support docs.
@@ -244,7 +244,7 @@ The project includes a persisted baseline eval workflow for checking RAG behavio
 - Refusal behavior
 - Latency metadata
 
-The deterministic provider keeps evals repeatable and CI-safe. Groq can be enabled locally for experimentation, but it is optional and not required for the default demo or tests.
+The deterministic provider keeps evals repeatable and CI-safe. The default demo uses Groq for answer generation, while eval judging stays deterministic unless `EVAL_JUDGE_PROVIDER=groq` is explicitly configured.
 
 ### Optional LLM-As-Judge Mode
 
@@ -270,7 +270,7 @@ Recent eval runs are also summarized in the dashboard with total, passed, and fa
 - **No eval runs yet:** Run the baseline eval from the dashboard or call `POST /evals/run-baseline`.
 - **Judge mode missing API key:** `GROQ_API_KEY` is required only when `EVAL_JUDGE_PROVIDER=groq`. Set `EVAL_JUDGE_PROVIDER=deterministic` for local/CI-safe runs.
 - **Invalid judge output:** Malformed judge JSON is treated as a failed eval case with judge reasoning that explains the validation failure.
-- **CI accidentally uses a real provider:** Keep `LLM_PROVIDER`, `EMBEDDING_PROVIDER`, and `EVAL_JUDGE_PROVIDER` unset or set to deterministic in CI unless secrets are intentionally configured for a separate non-default workflow.
+- **CI accidentally uses a real provider:** Run CI with `NODE_ENV=test` or set `LLM_PROVIDER`, `EMBEDDING_PROVIDER`, and `EVAL_JUDGE_PROVIDER` to deterministic unless secrets are intentionally configured for a separate non-default workflow.
 - **Generated client out of date:** Start the API locally, then run `cd apps/web && npm run generate:api-client` to validate the checked-in client against OpenAPI.
 
 ## CI and Quality Gates

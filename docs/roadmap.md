@@ -34,9 +34,9 @@ Support RAG Evaluator is currently a portfolio-grade full-stack RAG evaluator. T
 ## Known Limitations
 
 - The included content is a small sample dataset, not a production support corpus.
-- Deterministic embeddings are intended for local/demo behavior and repeatable tests.
-- Real embedding experiments require provider configuration, matching pgvector dimensions, and re-embedding documents when switching providers.
+- OpenAI-compatible embeddings are intended for the default demo path.
+- Deterministic embeddings remain available for offline fallback and repeatable tests.
 - Optional auth is simple shared-token protection, not full user management or OAuth.
 - LLM-as-judge evals are optional and config-gated; default deterministic eval behavior remains CI-safe.
 - Production deployment is not implemented yet.
-- Streaming uses the deterministic fallback by default. Real provider behavior depends on local provider configuration and should not be required in CI.
+- Streaming uses the selected answer provider, with deterministic fallback remaining available for CI.

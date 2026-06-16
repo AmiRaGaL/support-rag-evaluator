@@ -143,8 +143,8 @@ NestJS API (apps/api)
 
 The API uses an LLM provider interface so answer generation can be swapped without changing the chat orchestration flow.
 
-- **Deterministic provider**: Default provider when `LLM_PROVIDER` is unset or set to `deterministic`. It builds predictable grounded answers from retrieved chunks, supports refusal behavior, and requires no external API key. This keeps local development, tests, and CI stable.
-- **Groq provider**: Optional provider when `LLM_PROVIDER=groq`. It uses Groq's OpenAI-compatible chat completions with `GROQ_API_KEY`, optional `GROQ_CHAT_MODEL`, and optional `GROQ_BASE_URL`. This is intended for local experimentation with real LLM responses and is not required for the default demo.
+- **Groq provider**: Default provider outside `NODE_ENV=test`. It uses Groq's OpenAI-compatible chat completions with `GROQ_API_KEY`, optional `GROQ_CHAT_MODEL`, and optional `GROQ_BASE_URL`. This is the real GenAI RAG path for app/demo mode.
+- **Deterministic provider**: Default provider in `NODE_ENV=test`, or when `LLM_PROVIDER=deterministic` is explicit. It builds predictable grounded answers from retrieved chunks, supports refusal behavior, and requires no external API key. This keeps tests, CI, and offline fallback stable.
 
 Secrets should stay in local environment files or runtime configuration and should not be committed.
 

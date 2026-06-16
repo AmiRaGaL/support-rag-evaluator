@@ -6,13 +6,36 @@ import { GroqLlmProvider } from './groq-llm.provider';
 import { LLM_PROVIDER, LlmService } from './llm.service';
 import type { LlmProvider } from './llm.types';
 
+export type LlmProviderName = 'deterministic' | 'groq';
+
+export function resolveLlmProviderName(
+  configService: ConfigService,
+): LlmProviderName {
+  const configuredProvider = configService
+    .get<string>('LLM_PROVIDER')
+    ?.trim()
+    .toLowerCase();
+
+  if (!configuredProvider) {
+    return configService.get<string>('NODE_ENV') === 'test'
+      ? 'deterministic'
+      : 'groq';
+  }
+
+  if (configuredProvider === 'deterministic' || configuredProvider === 'groq') {
+    return configuredProvider;
+  }
+
+  throw new Error(
+    `Unsupported LLM_PROVIDER=${configuredProvider}. Supported values: deterministic, groq.`,
+  );
+}
+
 export function createLlmProvider(
   configService: ConfigService,
   groundedAnswerService: GroundedAnswerService,
 ): LlmProvider {
-  const provider =
-    configService.get<string>('LLM_PROVIDER')?.trim().toLowerCase() ??
-    'deterministic';
+  const provider = resolveLlmProviderName(configService);
 
   if (provider === 'groq') {
     return new GroqLlmProvider({

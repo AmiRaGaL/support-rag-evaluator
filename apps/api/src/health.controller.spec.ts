@@ -1,3 +1,4 @@
+import { ConfigService } from '@nestjs/config';
 import { HealthController } from './health.controller';
 import { PrismaService } from './prisma/prisma.service';
 
@@ -9,7 +10,16 @@ describe('HealthController', () => {
     const prisma = {
       $queryRaw: queryRaw,
     } as unknown as PrismaService;
-    const controller = new HealthController(prisma);
+    const configService = {
+      get: jest.fn((key: string) => {
+        if (key === 'NODE_ENV') {
+          return 'production';
+        }
+
+        return undefined;
+      }),
+    } as unknown as ConfigService;
+    const controller = new HealthController(prisma, configService);
 
     const result: Awaited<ReturnType<HealthController['getHealth']>> =
       await controller.getHealth();
@@ -19,6 +29,9 @@ describe('HealthController', () => {
       status: 'ok',
       service: 'support-rag-api',
       database: 'ok',
+      llmProvider: 'groq',
+      embeddingProvider: 'openai',
+      ragMode: 'genai',
       timestamp: result.timestamp,
     });
     expect(typeof result.timestamp).toBe('string');
