@@ -9,9 +9,9 @@ The app has five deployment concerns:
 - **API service:** NestJS API in `apps/api`. It serves health checks, OpenAPI docs, ingestion, retrieval, chat, query logs, and eval endpoints.
 - **Web dashboard:** Next.js app in `apps/web`. It calls the API through `NEXT_PUBLIC_API_BASE_URL`.
 - **Database:** PostgreSQL with the `pgvector` extension enabled.
-- **LLM provider:** `deterministic` is the default and requires no external key. `groq` is optional and requires a user-provided Groq API key.
+- **LLM provider:** `groq` is the default outside `NODE_ENV=test` and requires a user-provided Groq API key. `deterministic` remains available for tests, CI, and offline fallback.
 - **Eval judge provider:** `deterministic` is the default. Optional Groq judge mode is explicit and also requires a user-provided Groq API key.
-- **Embedding provider:** `deterministic` is the default and requires no external key. The optional OpenAI-compatible provider requires a server-side embedding API key.
+- **Embedding provider:** `openai` is the default outside `NODE_ENV=test` and requires a server-side embedding API key. `deterministic` remains available for tests, CI, and offline fallback.
 
 Docker Compose is available for local full-stack demos with Postgres, API, and web services. Hosted production should use platform-managed configuration and secrets rather than local Docker-only values.
 
@@ -48,6 +48,20 @@ Required web environment variables:
 | `NEXT_PUBLIC_API_AUTH_TOKEN` | Local/demo only | Browser-visible token fallback. Do not use for real secrets. |
 
 For containerized server-side proxying, `API_BASE_URL` may also be used by the web runtime, but the required hosted web setting is `NEXT_PUBLIC_API_BASE_URL`.
+
+## Real Embedding Setup
+
+To run the deployed app as proper GenAI RAG, configure both real generation and real embeddings:
+
+- `LLM_PROVIDER=groq`
+- `GROQ_API_KEY`
+- Optional: `GROQ_CHAT_MODEL=llama-3.1-8b-instant`
+- `EMBEDDING_PROVIDER=openai`
+- `EMBEDDING_API_KEY`
+- Optional: `EMBEDDING_MODEL=text-embedding-3-small`
+- `EMBEDDING_DIMENSIONS=1536`
+
+After changing `EMBEDDING_MODEL`, `EMBEDDING_PROVIDER`, `EMBEDDING_BASE_URL`, or `EMBEDDING_DIMENSIONS`, clear/rebuild existing embeddings or re-ingest and re-embed docs. Deterministic embeddings and OpenAI-compatible embeddings are not interchangeable; stored chunk vectors and query vectors must come from the same provider, model, and dimension setup.
 
 ## Hosting Notes
 
@@ -104,7 +118,7 @@ Do not use `prisma migrate dev` or `prisma migrate reset` against production. Th
 - Provision PostgreSQL with `pgvector`.
 - Run Prisma migrations.
 - Configure the web dashboard with the hosted API URL.
-- Verify `GET /health`.
+- Verify `GET /health` reports the expected `llmProvider`, `embeddingProvider`, and `ragMode`.
 - Verify `GET /docs`.
 - Ingest support documents.
 - Embed documents.
@@ -129,7 +143,7 @@ Do not use `prisma migrate dev` or `prisma migrate reset` against production. Th
 - **Dashboard token missing:** Set `API_AUTH_TOKEN` in the web runtime so the Next.js proxy can forward it server-side. Use `NEXT_PUBLIC_API_AUTH_TOKEN` only for local/demo scenarios because it is browser-visible.
 - **Judge mode missing API key:** `GROQ_API_KEY` is required only when `EVAL_JUDGE_PROVIDER=groq`. Use `EVAL_JUDGE_PROVIDER=deterministic` for CI-safe deployments.
 - **Invalid judge output:** Judge JSON is validated. Invalid output is persisted as a failed judge result with a clear reason; switch back to deterministic judge mode if a real provider is unreliable.
-- **CI accidentally configured with a real provider:** Keep `LLM_PROVIDER`, `EMBEDDING_PROVIDER`, and `EVAL_JUDGE_PROVIDER` deterministic in default CI. External-provider CI should be a separate, explicitly secret-backed workflow.
+- **CI accidentally configured with a real provider:** Run CI with `NODE_ENV=test` or set `LLM_PROVIDER`, `EMBEDDING_PROVIDER`, and `EVAL_JUDGE_PROVIDER` deterministic. External-provider CI should be a separate, explicitly secret-backed workflow.
 
 ## Limitations
 

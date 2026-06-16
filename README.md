@@ -7,8 +7,8 @@ Support RAG Evaluator is an eval-driven RAG support assistant that answers from 
 - Markdown document ingestion for sample support documentation.
 - PostgreSQL + pgvector retrieval over embedded document chunks.
 - Grounded chat responses with citations and refusal behavior for unsupported questions.
-- Deterministic CI-safe LLM provider by default, with no API key required.
-- Optional Groq provider for local experimentation.
+- Groq LLM provider by default outside tests, with deterministic fallback for CI and offline runs.
+- OpenAI-compatible embeddings by default outside tests, with deterministic fallback for CI and offline runs.
 - Optional token auth guard for API and dashboard demo protection.
 - Query logging for prompts, answers, retrieved chunks, citations, refusal status, latency, and evaluation metadata.
 - Persisted baseline eval runs with aggregate metrics, per-case results, and optional LLM-as-judge metadata.
@@ -27,8 +27,8 @@ Support RAG Evaluator is an eval-driven RAG support assistant that answers from 
 - ORM: Prisma
 - API docs: OpenAPI / Swagger UI
 - Local orchestration: Docker Compose
-- LLM providers: deterministic default provider, optional Groq OpenAI-compatible provider
-- Embedding providers: deterministic default provider, optional OpenAI-compatible provider
+- LLM providers: Groq OpenAI-compatible provider, plus deterministic fallback
+- Embedding providers: OpenAI-compatible provider, plus deterministic fallback
 - Testing: Jest for the API, ESLint for API and web
 
 ## System Architecture
@@ -135,6 +135,35 @@ Demo flow:
 
 OpenAI-compatible embeddings are the default outside `NODE_ENV=test`. Deterministic embeddings remain available for tests, CI, and offline fallback because they do not require external API keys or network calls.
 
+## Real Embedding Setup
+
+To run the project as proper GenAI RAG, configure both an LLM provider and an embedding provider.
+
+Required for real generation:
+
+- `LLM_PROVIDER=groq`
+- `GROQ_API_KEY`
+- Optional: `GROQ_CHAT_MODEL=llama-3.1-8b-instant`
+
+Required for real embeddings:
+
+- `EMBEDDING_PROVIDER=openai`
+- `EMBEDDING_API_KEY`
+- Optional: `EMBEDDING_MODEL=text-embedding-3-small`
+- `EMBEDDING_DIMENSIONS=1536`
+
+Manual setup flow:
+
+1. Configure `GROQ_API_KEY`, `LLM_PROVIDER=groq`, `EMBEDDING_PROVIDER=openai`, `EMBEDDING_API_KEY`, `EMBEDDING_MODEL=text-embedding-3-small`, and `EMBEDDING_DIMENSIONS=1536`.
+2. Start Postgres, the API, and the web dashboard.
+3. Run migrations.
+4. Ingest sample docs from the dashboard or `POST /ingestion/sample-docs`.
+5. Embed missing chunks with the dashboard setup action or `POST /retrieval/embed-missing`.
+6. Ask a support question in chat.
+7. Confirm `GET /health` reports `llmProvider: "groq"`, `embeddingProvider: "openai"`, and `ragMode: "genai"`.
+
+After switching embedding providers, models, base URLs, or dimensions, existing document chunks must be re-embedded. Deterministic embeddings and OpenAI-compatible embeddings are not interchangeable; stored chunk vectors and query vectors must come from the same provider, model, and dimension setup.
+
 Embedding provider behavior is configured through API environment variables:
 
 | Variable | Notes |
@@ -145,7 +174,7 @@ Embedding provider behavior is configured through API environment variables:
 | `EMBEDDING_DIMENSIONS` | Must match the pgvector column dimension, currently `1536` for `DocumentChunk.embedding vector(1536)`. |
 | `EMBEDDING_BASE_URL` | Optional OpenAI-compatible base URL override, if using a compatible endpoint. |
 
-Changing embedding providers usually requires re-embedding documents so stored chunk vectors and query vectors come from the same embedding space.
+Changing `EMBEDDING_MODEL`, `EMBEDDING_PROVIDER`, `EMBEDDING_BASE_URL`, or `EMBEDDING_DIMENSIONS` requires clearing/rebuilding existing embeddings or re-ingesting and re-embedding docs so retrieval stays consistent.
 
 Re-embedding workflow:
 
@@ -279,7 +308,7 @@ GitHub Actions validate the full-stack repository without requiring external API
 
 - API: install dependencies, generate Prisma client, apply migrations against a CI Postgres service, lint, test, and build.
 - Web: install dependencies, lint, and build with `NEXT_PUBLIC_API_BASE_URL` configured.
-- Docker config: run static checks for the Compose services, expected host ports, deterministic API provider defaults, and web API base URL wiring without requiring a Docker daemon.
+- Docker config: run static checks for the Compose services, expected host ports, GenAI API provider defaults, deterministic migration providers, and web API base URL wiring without requiring a Docker daemon.
 
 ## Portfolio Highlights
 

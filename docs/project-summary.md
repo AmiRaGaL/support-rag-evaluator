@@ -17,7 +17,7 @@ The application is split into a NestJS API and a Next.js dashboard:
 
 ## RAG Flow
 
-The default workflow starts with bundled markdown support docs. The API ingests the docs, chunks them, generates deterministic embeddings by default, and stores vectors in pgvector. Chat requests embed the question, retrieve relevant chunks, build a grounded answer from retrieved context, attach citation metadata, and refuse questions that are not supported by the retrieved docs.
+The default workflow starts with bundled markdown support docs. The API ingests the docs, chunks them, generates OpenAI-compatible embeddings outside tests, and stores vectors in pgvector. Chat requests embed the question, retrieve relevant chunks, build a grounded answer from retrieved context, attach citation metadata, and refuse questions that are not supported by the retrieved docs.
 
 Both `POST /chat` and `POST /chat/stream` use the same grounding, citation, refusal, and logging path. The streaming endpoint emits answer text incrementally and finishes with the same final response metadata used by the dashboard.
 
@@ -47,18 +47,18 @@ The repository includes API lint/test/build checks, web lint/build checks, stati
 
 Deployment readiness documentation is included, but no production deployment is claimed or bundled. Hosted environments are expected to provide managed configuration, managed secrets, a PostgreSQL database with pgvector, and explicit migration execution.
 
-## Optional Providers And Auth
+## Provider Setup And Auth
 
-The default mode is deterministic for the LLM, embeddings, and eval judge. This keeps demos, tests, and CI stable without `GROQ_API_KEY`, `EMBEDDING_API_KEY`, or judge-provider keys.
+App/demo mode is intended to run real GenAI RAG with `LLM_PROVIDER=groq`, `GROQ_API_KEY`, `EMBEDDING_PROVIDER=openai`, and `EMBEDDING_API_KEY`. The health endpoint and dashboard expose the effective LLM provider, embedding provider, and RAG mode so deterministic fallback is visible.
 
-Optional modes include:
+Deterministic providers remain available for tests, CI, and offline fallback. Optional modes include:
 
-- Groq chat completions for local LLM experimentation.
-- OpenAI-compatible embeddings for real embedding experiments.
+- Groq chat completions for real LLM generation.
+- OpenAI-compatible embeddings for real embedding retrieval.
 - Groq LLM-as-judge eval scoring.
 - A simple shared-token auth guard for protected API/dashboard demo workflows.
 
-These are intentionally configuration-gated. Real provider keys and auth tokens must be user-managed secrets and should never be committed.
+Real provider keys and auth tokens must be user-managed secrets and should never be committed. After changing `EMBEDDING_PROVIDER`, `EMBEDDING_MODEL`, `EMBEDDING_BASE_URL`, or `EMBEDDING_DIMENSIONS`, existing document chunks must be re-embedded because stored chunk vectors and query vectors must come from the same provider/model/dimension setup.
 
 ## What This Demonstrates
 
@@ -68,7 +68,7 @@ These are intentionally configuration-gated. Real provider keys and auth tokens 
 - Full-stack development across a NestJS API and Next.js dashboard.
 - AI/RAG engineering focused on retrieval, grounding, citations, refusals, and provider abstractions.
 - Eval-driven quality measurement with persisted run history and dashboard analytics.
-- CI and Docker readiness without requiring external AI provider keys.
+- CI and Docker readiness with deterministic fallback available when external AI provider keys are not configured.
 - Documentation and product thinking around demo flows, deployment readiness, release checks, and limitations.
 
 ## Current Limitations
@@ -76,5 +76,5 @@ These are intentionally configuration-gated. Real provider keys and auth tokens 
 - No production deployment is included.
 - Auth is simple shared-token protection only; there is no OAuth, user management, roles, sessions, or multi-user account system.
 - The default corpus is a small bundled sample-doc dataset, not a production support knowledge base.
-- Deterministic providers are the default for CI, tests, and demos, so real model behavior requires explicit provider configuration.
+- Deterministic providers are the default for tests and remain available for CI/offline fallback.
 - External LLM, embedding, and judge providers require user-managed keys stored outside git.

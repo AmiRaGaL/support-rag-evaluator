@@ -35,7 +35,7 @@ export class EvalsController {
   @ApiOperation({
     summary: 'List recent eval runs',
     description:
-      'Returns recent persisted eval runs with per-case results. Runs record the provider used; deterministic is the default and Groq is optional when configured.',
+      'Returns recent persisted eval runs with per-case results. Runs record the provider used by the configured RAG path.',
   })
   @ApiOkResponse({
     description: 'Recent eval runs ordered newest first.',

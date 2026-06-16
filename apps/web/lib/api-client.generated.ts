@@ -19,7 +19,7 @@ export interface HealthResponse {
   database: string;
   llmProvider: "deterministic" | "groq";
   embeddingProvider: "deterministic" | "openai";
-  ragMode: "genai" | "deterministic";
+  ragMode: "genai" | "hybrid" | "deterministic";
   timestamp: string;
 }
 

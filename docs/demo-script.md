@@ -1,6 +1,6 @@
 # Demo Script
 
-Use this script for a 3-5 minute portfolio walkthrough of Support RAG Evaluator. The demo assumes the deterministic provider, which is the default and does not require API keys.
+Use this script for a 3-5 minute portfolio walkthrough of Support RAG Evaluator. The default demo assumes Groq generation and OpenAI-compatible embeddings configured with local API keys; deterministic providers remain available for offline fallback and CI.
 
 ## 1. Project Intro
 
@@ -90,9 +90,9 @@ http://localhost:3001/health
 
 **Talking points:**
 
-- The retrieval module finds chunks with missing vectors and stores deterministic embeddings.
+- The retrieval module finds chunks with missing vectors and stores embeddings from the configured provider.
 - pgvector powers similarity search over those chunk embeddings.
-- Deterministic embeddings keep the local demo and CI behavior stable.
+- The default demo should use OpenAI-compatible embeddings; deterministic embeddings are fallback for offline runs and CI.
 
 ## 8. Ask A Grounded Support Question
 

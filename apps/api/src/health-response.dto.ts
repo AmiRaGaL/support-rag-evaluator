@@ -36,7 +36,7 @@ export class HealthResponseDto {
   @ApiProperty({
     description:
       'Whether the app is running real GenAI RAG or deterministic fallback.',
-    enum: ['genai', 'deterministic'],
+    enum: ['genai', 'hybrid', 'deterministic'],
     example: 'genai',
   })
   ragMode!: string;

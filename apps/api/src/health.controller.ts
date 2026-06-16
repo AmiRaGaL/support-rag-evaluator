@@ -5,12 +5,32 @@ import {
   ApiOperation,
   ApiTags,
 } from '@nestjs/swagger';
-import { ConfigService } from '@nestjs/config';
-import { resolveEmbeddingProviderName } from './embeddings/embeddings.module';
+import { EmbeddingsService } from './embeddings/embeddings.service';
 import { HealthResponseDto } from './health-response.dto';
-import { resolveLlmProviderName } from './llm/llm.module';
+import { LlmService } from './llm/llm.service';
 import { PrismaService } from './prisma/prisma.service';
 import { Public } from './auth/public.decorator';
+
+export type RagMode = 'genai' | 'hybrid' | 'deterministic';
+
+export function resolveRagMode(
+  llmProvider: string,
+  embeddingProvider: string,
+): RagMode {
+  const deterministicProviderCount = [llmProvider, embeddingProvider].filter(
+    (provider) => provider === 'deterministic',
+  ).length;
+
+  if (deterministicProviderCount === 0) {
+    return 'genai';
+  }
+
+  if (deterministicProviderCount === 1) {
+    return 'hybrid';
+  }
+
+  return 'deterministic';
+}
 
 @ApiTags('health')
 @Public()
@@ -18,7 +38,8 @@ import { Public } from './auth/public.decorator';
 export class HealthController {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly configService: ConfigService,
+    private readonly llmService: LlmService,
+    private readonly embeddingsService: EmbeddingsService,
   ) {}
 
   @Get()
@@ -36,8 +57,8 @@ export class HealthController {
   })
   async getHealth() {
     await this.prisma.$queryRaw`SELECT 1`;
-    const llmProvider = resolveLlmProviderName(this.configService);
-    const embeddingProvider = resolveEmbeddingProviderName(this.configService);
+    const llmProvider = this.llmService.getProviderName();
+    const embeddingProvider = this.embeddingsService.getProviderName();
 
     return {
       status: 'ok',
@@ -45,10 +66,7 @@ export class HealthController {
       database: 'ok',
       llmProvider,
       embeddingProvider,
-      ragMode:
-        llmProvider === 'groq' && embeddingProvider === 'openai'
-          ? 'genai'
-          : 'deterministic',
+      ragMode: resolveRagMode(llmProvider, embeddingProvider),
       timestamp: new Date().toISOString(),
     };
   }

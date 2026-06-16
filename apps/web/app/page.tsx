@@ -41,6 +41,31 @@ type HealthState =
   | { connected: true; data: HealthResponse }
   | { connected: false; message: string };
 
+function getProviderStatus(health: HealthResponse) {
+  if (health.ragMode === "genai") {
+    return {
+      badgeTone: "success" as const,
+      title: "GenAI RAG active",
+      description: "Using real LLM generation and real embedding retrieval.",
+    };
+  }
+
+  if (health.ragMode === "hybrid") {
+    return {
+      badgeTone: "warning" as const,
+      title: "Hybrid RAG mode",
+      description:
+        "One provider is deterministic fallback. This is not the full GenAI RAG path.",
+    };
+  }
+
+  return {
+    badgeTone: "danger" as const,
+    title: "Deterministic fallback",
+    description: "Not real GenAI generation or real embedding retrieval.",
+  };
+}
+
 export default async function Home() {
   return (
     <div className="home">
@@ -107,19 +132,23 @@ async function HealthPanel() {
     );
   }
 
+  const providerStatus = getProviderStatus(health.data);
+
   return (
     <Card className="health-panel" aria-label="API health">
       <div>
         <p className="eyebrow">API health</p>
-        <h2>Connected</h2>
+        <h2>{providerStatus.title}</h2>
         <p>
           Service {health.data.service} reports {health.data.status}. Database
-          status is {health.data.database}. RAG mode is{" "}
-          {health.data.ragMode} with {health.data.llmProvider} answers and{" "}
-          {health.data.embeddingProvider} embeddings.
+          status is {health.data.database}. {providerStatus.description}
+        </p>
+        <p>
+          LLM: <strong>{health.data.llmProvider}</strong>. Embeddings:{" "}
+          <strong>{health.data.embeddingProvider}</strong>.
         </p>
       </div>
-      <Badge tone={health.data.ragMode === "genai" ? "success" : "warning"}>
+      <Badge tone={providerStatus.badgeTone}>
         {health.data.ragMode}
       </Badge>
     </Card>
