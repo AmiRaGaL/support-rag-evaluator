@@ -5,6 +5,14 @@ const apiRoot = process.cwd();
 const repoRoot = resolve(apiRoot, '..', '..');
 const dockerfilePath = resolve(apiRoot, 'Dockerfile');
 const dockerIgnorePath = resolve(apiRoot, '.dockerignore');
+const repoDockerIgnorePath = resolve(repoRoot, '.dockerignore');
+const sampleDocsPath = resolve(repoRoot, 'datasets', 'sample-docs');
+const baselineEvalPath = resolve(
+  repoRoot,
+  'datasets',
+  'evals',
+  'baseline.json',
+);
 const webDockerfilePath = resolve(repoRoot, 'apps', 'web', 'Dockerfile');
 const webApiRoutePath = resolve(
   repoRoot,
@@ -53,15 +61,36 @@ describe('Docker configuration', () => {
   it('keeps the API Docker runtime files present', () => {
     expect(existsSync(dockerfilePath)).toBe(true);
     expect(existsSync(dockerIgnorePath)).toBe(true);
+    expect(existsSync(repoDockerIgnorePath)).toBe(true);
 
     const dockerfile = readText(dockerfilePath);
 
     expect(dockerfile).toContain('FROM base AS runtime');
+    expect(dockerfile).toContain(
+      'COPY apps/api/package.json apps/api/package-lock.json ./',
+    );
     expect(dockerfile).toContain('RUN npm ci');
     expect(dockerfile).toContain('npx prisma generate');
     expect(dockerfile).toContain('RUN npm run build');
+    expect(dockerfile).toContain('COPY datasets ./datasets');
     expect(dockerfile).toContain('EXPOSE 3001');
     expect(dockerfile).toContain('CMD ["node", "dist/src/main.js"]');
+  });
+
+  it('keeps root datasets available to the API image build', () => {
+    expect(existsSync(sampleDocsPath)).toBe(true);
+    expect(existsSync(baselineEvalPath)).toBe(true);
+
+    const dockerfile = readText(dockerfilePath);
+    const compose = readText(composePath);
+    const api = serviceBlock(compose, 'api');
+    const migrate = serviceBlock(compose, 'api-migrate');
+
+    expect(dockerfile).toContain('COPY datasets ./datasets');
+    expect(api).toContain('context: .');
+    expect(api).toContain('dockerfile: apps/api/Dockerfile');
+    expect(migrate).toContain('context: .');
+    expect(migrate).toContain('dockerfile: apps/api/Dockerfile');
   });
 
   it('keeps the web Docker runtime file present for production builds', () => {
@@ -86,7 +115,8 @@ describe('Docker configuration', () => {
     const compose = readText(composePath);
     const api = serviceBlock(compose, 'api');
 
-    expect(api).toContain('context: ./apps/api');
+    expect(api).toContain('context: .');
+    expect(api).toContain('dockerfile: apps/api/Dockerfile');
     expect(api).toContain('target: runtime');
     expect(api).toContain(
       'DATABASE_URL: postgresql://support_rag_user:support_rag_password@postgres:5432/support_rag_dev?schema=public',
