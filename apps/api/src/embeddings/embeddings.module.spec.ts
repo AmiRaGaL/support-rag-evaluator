@@ -5,6 +5,7 @@ import {
   resolveEmbeddingProviderName,
 } from './embeddings.module';
 import { FakeEmbeddingProvider } from './fake-embedding.provider';
+import { GeminiEmbeddingProvider } from './gemini-embedding.provider';
 import { OpenAiEmbeddingProvider } from './openai-embedding.provider';
 
 function configServiceFor(values: Record<string, string | undefined>): {
@@ -39,16 +40,17 @@ describe('createEmbeddingProvider', () => {
     expect(getConfigKeys(get)).not.toContain('EMBEDDING_API_KEY');
   });
 
-  it('defaults to OpenAI outside test', () => {
+  it('defaults to Gemini outside test', () => {
     const { configService, get } = configServiceFor({
       NODE_ENV: 'production',
-      EMBEDDING_API_KEY: 'test_embedding_key',
+      GEMINI_API_KEY: 'test_gemini_key',
     });
 
     const provider = createEmbeddingProvider(configService);
 
-    expect(provider).toBeInstanceOf(OpenAiEmbeddingProvider);
-    expect(getConfigKeys(get)).toContain('EMBEDDING_API_KEY');
+    expect(provider).toBeInstanceOf(GeminiEmbeddingProvider);
+    expect(getConfigKeys(get)).toContain('GEMINI_API_KEY');
+    expect(getConfigKeys(get)).not.toContain('EMBEDDING_API_KEY');
   });
 
   it('uses deterministic for explicit deterministic provider values', () => {
@@ -78,6 +80,30 @@ describe('createEmbeddingProvider', () => {
     expect(getConfigKeys(get)).toContain('EMBEDDING_API_KEY');
   });
 
+  it('constructs Gemini when EMBEDDING_PROVIDER=gemini', () => {
+    const { configService, get } = configServiceFor({
+      EMBEDDING_PROVIDER: 'gemini',
+      GEMINI_API_KEY: 'test_gemini_key',
+      GEMINI_EMBEDDING_MODEL: 'gemini-embedding-2',
+      EMBEDDING_DIMENSIONS: String(EMBEDDING_DIMENSIONS),
+    });
+
+    const provider = createEmbeddingProvider(configService);
+
+    expect(provider).toBeInstanceOf(GeminiEmbeddingProvider);
+    expect(getConfigKeys(get)).toContain('GEMINI_API_KEY');
+  });
+
+  it('fails clearly for missing API key only when Gemini is configured', () => {
+    const { configService } = configServiceFor({
+      EMBEDDING_PROVIDER: 'gemini',
+    });
+
+    expect(() => createEmbeddingProvider(configService)).toThrow(
+      'GEMINI_API_KEY is required when EMBEDDING_PROVIDER=gemini.',
+    );
+  });
+
   it('fails clearly for missing API key only when OpenAI is configured', () => {
     const { configService } = configServiceFor({
       EMBEDDING_PROVIDER: 'openai',
@@ -94,7 +120,7 @@ describe('createEmbeddingProvider', () => {
     });
 
     expect(() => resolveEmbeddingProviderName(configService)).toThrow(
-      'Unsupported EMBEDDING_PROVIDER=wat. Supported values: deterministic, openai.',
+      'Unsupported EMBEDDING_PROVIDER=wat. Supported values: deterministic, gemini, openai.',
     );
   });
 

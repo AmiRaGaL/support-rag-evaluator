@@ -130,10 +130,10 @@ describe('Docker configuration', () => {
     expect(api).toContain(
       'GROQ_CHAT_MODEL: ${GROQ_CHAT_MODEL:-llama-3.1-8b-instant}',
     );
-    expect(api).toContain('EMBEDDING_PROVIDER: openai');
-    expect(api).toContain('EMBEDDING_API_KEY: ${EMBEDDING_API_KEY}');
+    expect(api).toContain('EMBEDDING_PROVIDER: gemini');
+    expect(api).toContain('GEMINI_API_KEY: ${GEMINI_API_KEY}');
     expect(api).toContain(
-      'EMBEDDING_MODEL: ${EMBEDDING_MODEL:-text-embedding-3-small}',
+      'GEMINI_EMBEDDING_MODEL: ${GEMINI_EMBEDDING_MODEL:-gemini-embedding-2}',
     );
     expect(api).toContain(
       'EMBEDDING_DIMENSIONS: ${EMBEDDING_DIMENSIONS:-1536}',

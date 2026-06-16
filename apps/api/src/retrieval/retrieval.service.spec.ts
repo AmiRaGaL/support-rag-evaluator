@@ -39,6 +39,7 @@ describe('RetrievalService', () => {
       {
         id: 'chunk_1',
         content: 'Billing email updates',
+        documentTitle: 'Billing',
       },
     ]);
     prisma.$executeRaw.mockResolvedValue(1);
@@ -53,6 +54,10 @@ describe('RetrievalService', () => {
     expect(result).toEqual({ embeddedCount: 1 });
     expect(embeddingsService.embed).toHaveBeenCalledWith(
       'Billing email updates',
+      {
+        purpose: 'document',
+        title: 'Billing',
+      },
     );
     expect(prisma.$executeRaw).toHaveBeenCalledTimes(1);
     expect(mockArg(prisma.$executeRaw, 0, 1)).toBe(
@@ -108,6 +113,9 @@ describe('RetrievalService', () => {
     });
     expect(mockArg(prisma.$queryRaw, 0, 1)).toBe(`[${unitVector().join(',')}]`);
     expect(mockArg(prisma.$queryRaw, 0, 2)).toBe(50);
+    expect(embeddingsService.embed).toHaveBeenCalledWith('billing email', {
+      purpose: 'query',
+    });
   });
 
   it('does not query vector search for blank queries', async () => {
@@ -135,6 +143,7 @@ describe('RetrievalService', () => {
       {
         id: 'chunk_1',
         content: 'Billing email updates',
+        documentTitle: 'Billing',
       },
     ]);
     embeddingsService.embed.mockResolvedValue([1]);

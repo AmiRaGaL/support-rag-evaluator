@@ -23,7 +23,7 @@ function chunk(overrides: Partial<RetrievedChunk> = {}): RetrievedChunk {
 describe('DeterministicLlmProvider', () => {
   const provider = new DeterministicLlmProvider(new GroundedAnswerService());
 
-  it('keeps deterministic grounded answer behavior as the default provider', async () => {
+  it('keeps deterministic grounded answer behavior stable', async () => {
     const chunks = [chunk()];
 
     const result = await provider.generateGroundedAnswer({

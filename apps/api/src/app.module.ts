@@ -5,9 +5,11 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ApiAuthGuard } from './auth/api-auth.guard';
 import { ChatModule } from './chat/chat.module';
+import { EmbeddingsModule } from './embeddings/embeddings.module';
 import { EvalsModule } from './evals/evals.module';
 import { HealthController } from './health.controller';
 import { IngestionModule } from './ingestion/ingestion.module';
+import { LlmModule } from './llm/llm.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { RetrievalModule } from './retrieval/retrieval.module';
 
@@ -19,6 +21,8 @@ import { RetrievalModule } from './retrieval/retrieval.module';
     RetrievalModule,
     ChatModule,
     EvalsModule,
+    LlmModule,
+    EmbeddingsModule,
   ],
   controllers: [AppController, HealthController],
   providers: [

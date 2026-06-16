@@ -28,15 +28,28 @@ export class HealthResponseDto {
 
   @ApiProperty({
     description: 'Effective embedding provider.',
-    enum: ['deterministic', 'openai'],
-    example: 'openai',
+    enum: ['deterministic', 'gemini', 'openai'],
+    example: 'gemini',
   })
   embeddingProvider!: string;
 
   @ApiProperty({
+    description: 'Effective embedding model.',
+    example: 'gemini-embedding-2',
+    required: false,
+  })
+  embeddingModel?: string;
+
+  @ApiProperty({
+    description: 'Effective embedding dimensions.',
+    example: 1536,
+  })
+  embeddingDimensions!: number;
+
+  @ApiProperty({
     description:
       'Whether the app is running real GenAI RAG or deterministic fallback.',
-    enum: ['genai', 'deterministic'],
+    enum: ['genai', 'hybrid', 'deterministic'],
     example: 'genai',
   })
   ragMode!: string;

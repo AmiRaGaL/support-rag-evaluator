@@ -30,7 +30,7 @@ export class QueryLogsController {
   @ApiOperation({
     summary: 'List recent RAG query logs',
     description:
-      'Returns recent query logs with retrieved chunk metadata. Logs include the provider used; deterministic is the default provider and Groq appears only if configured for the original query.',
+      'Returns recent query logs with retrieved chunk metadata. Logs include the provider used for the original query.',
   })
   @ApiOkResponse({
     description: 'Recent RAG query logs ordered newest first.',

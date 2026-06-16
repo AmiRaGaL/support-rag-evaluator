@@ -9,6 +9,7 @@ const MAX_SEARCH_LIMIT = 50;
 interface ChunkNeedingEmbedding {
   id: string;
   content: string;
+  documentTitle: string;
 }
 
 interface SearchChunkRow {
@@ -44,15 +45,19 @@ export class RetrievalService {
 
   async embedMissingChunks() {
     const rows = await this.prisma.$queryRaw<unknown[]>`
-      SELECT "id", "content"
-      FROM "DocumentChunk"
-      WHERE "embedding" IS NULL
-      ORDER BY "createdAt" ASC, "id" ASC
+      SELECT c."id", c."content", d."title" AS "documentTitle"
+      FROM "DocumentChunk" c
+      INNER JOIN "Document" d ON d."id" = c."documentId"
+      WHERE c."embedding" IS NULL
+      ORDER BY c."createdAt" ASC, c."id" ASC
     `;
     const chunks = this.parseChunkRows(rows);
 
     for (const chunk of chunks) {
-      const embedding = await this.embeddingsService.embed(chunk.content);
+      const embedding = await this.embeddingsService.embed(chunk.content, {
+        purpose: 'document',
+        title: chunk.documentTitle,
+      });
       await this.prisma.$executeRaw`
         UPDATE "DocumentChunk"
         SET "embedding" = ${this.toVectorLiteral(embedding)}::vector
@@ -77,7 +82,9 @@ export class RetrievalService {
     }
 
     const limit = this.normalizeLimit(input.limit);
-    const queryEmbedding = await this.embeddingsService.embed(query);
+    const queryEmbedding = await this.embeddingsService.embed(query, {
+      purpose: 'query',
+    });
     const queryVector = this.toVectorLiteral(queryEmbedding);
 
     const rows = await this.prisma.$queryRaw<unknown[]>`
@@ -151,14 +158,20 @@ export class RetrievalService {
 
       const id = row.id;
       const content = row.content;
+      const documentTitle = row.documentTitle;
 
-      if (typeof id !== 'string' || typeof content !== 'string') {
+      if (
+        typeof id !== 'string' ||
+        typeof content !== 'string' ||
+        typeof documentTitle !== 'string'
+      ) {
         throw this.unexpectedRowShapeError();
       }
 
       return {
         id,
         content,
+        documentTitle,
       };
     });
   }
