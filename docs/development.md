@@ -100,7 +100,7 @@ Open:
 
 - Use `.env.example` files as templates.
 - Do not commit real `.env` files, API keys, or secrets.
-- Normal app/demo mode defaults to `LLM_PROVIDER=groq` and `EMBEDDING_PROVIDER=openai` outside `NODE_ENV=test`; configure `GROQ_API_KEY` and `EMBEDDING_API_KEY` for that path.
+- Normal app/demo mode defaults to `LLM_PROVIDER=groq` and `EMBEDDING_PROVIDER=gemini` outside `NODE_ENV=test`; configure `GROQ_API_KEY` and `GEMINI_API_KEY` for that path.
 - Use `NODE_ENV=test` or explicit deterministic providers for offline fallback and CI-safe behavior.
 
 ## Before Opening A PR

@@ -120,7 +120,7 @@ Open:
 
 Compose runs Postgres with pgvector, the NestJS API, and the Next.js dashboard. Migrations are explicit through the `api-migrate` tool profile and are not run automatically by the API container.
 
-The Compose API service runs the real GenAI RAG path by default with `LLM_PROVIDER=groq` and `EMBEDDING_PROVIDER=openai`. Provide `GROQ_API_KEY` and `EMBEDDING_API_KEY` in your local environment before starting the demo. Set both providers to `deterministic` only for offline fallback, tests, or CI. Do not commit real API keys or local `.env` files.
+The Compose API service runs the hosted GenAI RAG path by default with `LLM_PROVIDER=groq` and `EMBEDDING_PROVIDER=gemini`. Provide `GROQ_API_KEY` and `GEMINI_API_KEY` in your local environment before starting the demo. Set providers to `deterministic` only for offline fallback, tests, or CI. Do not commit real API keys or local `.env` files.
 
 Demo flow:
 
@@ -133,9 +133,9 @@ Demo flow:
 
 ## Embedding Providers
 
-OpenAI-compatible embeddings are the default outside `NODE_ENV=test`. Deterministic embeddings remain available for tests, CI, and offline fallback because they do not require external API keys or network calls.
+Gemini embeddings are the hosted default outside `NODE_ENV=test`. Deterministic embeddings remain available for tests, CI, and offline fallback because they do not require external API keys or network calls.
 
-## Real Embedding Setup
+## Hosted Gemini Embedding Setup
 
 To run the project as proper GenAI RAG, configure both an LLM provider and an embedding provider.
 
@@ -147,32 +147,36 @@ Required for real generation:
 
 Required for real embeddings:
 
-- `EMBEDDING_PROVIDER=openai`
-- `EMBEDDING_API_KEY`
-- Optional: `EMBEDDING_MODEL=text-embedding-3-small`
+- `EMBEDDING_PROVIDER=gemini`
+- `GEMINI_API_KEY`
+- Optional: `GEMINI_EMBEDDING_MODEL=gemini-embedding-2`
 - `EMBEDDING_DIMENSIONS=1536`
 
 Manual setup flow:
 
-1. Configure `GROQ_API_KEY`, `LLM_PROVIDER=groq`, `EMBEDDING_PROVIDER=openai`, `EMBEDDING_API_KEY`, `EMBEDDING_MODEL=text-embedding-3-small`, and `EMBEDDING_DIMENSIONS=1536`.
+1. Configure `GROQ_API_KEY`, `LLM_PROVIDER=groq`, `EMBEDDING_PROVIDER=gemini`, `GEMINI_API_KEY`, `GEMINI_EMBEDDING_MODEL=gemini-embedding-2`, and `EMBEDDING_DIMENSIONS=1536`.
 2. Start Postgres, the API, and the web dashboard.
 3. Run migrations.
 4. Ingest sample docs from the dashboard or `POST /ingestion/sample-docs`.
 5. Embed missing chunks with the dashboard setup action or `POST /retrieval/embed-missing`.
 6. Ask a support question in chat.
-7. Confirm `GET /health` reports `llmProvider: "groq"`, `embeddingProvider: "openai"`, and `ragMode: "genai"`.
+7. Confirm `GET /health` reports `llmProvider: "groq"`, `embeddingProvider: "gemini"`, `embeddingModel: "gemini-embedding-2"`, `embeddingDimensions: 1536`, and `ragMode: "genai"`.
 
-After switching embedding providers, models, base URLs, or dimensions, existing document chunks must be re-embedded. Deterministic embeddings and OpenAI-compatible embeddings are not interchangeable; stored chunk vectors and query vectors must come from the same provider, model, and dimension setup.
+Gemini embeddings use a Google AI Studio API key. Gemini Embedding 2 supports `outputDimensionality`, so the API requests 1536-dimensional embeddings and no pgvector schema migration is required. Free tier access exists, but provider limits and pricing can change; do not treat it as unlimited free production usage.
+
+After switching embedding providers, models, base URLs, or dimensions, existing document chunks must be re-embedded. Deterministic, Gemini, and OpenAI-compatible embeddings are not interchangeable; stored chunk vectors and query vectors must come from the same provider, model, and dimension setup.
 
 Embedding provider behavior is configured through API environment variables:
 
 | Variable | Notes |
 | --- | --- |
-| `EMBEDDING_PROVIDER` | Defaults to `openai` outside `NODE_ENV=test`; defaults to `deterministic` in tests. Explicit `deterministic` keeps offline fallback available. |
-| `EMBEDDING_API_KEY` | Required when the effective provider is `openai`. Store real keys in local or managed secrets, never in git. |
-| `EMBEDDING_MODEL` | Optional model override for the real provider. The default is suitable for the current 1536-dimensional schema. |
+| `EMBEDDING_PROVIDER` | Defaults to `gemini` outside `NODE_ENV=test`; defaults to `deterministic` in tests. Explicit `openai` still works if configured. |
+| `GEMINI_API_KEY` | Required when the effective provider is `gemini`. Store real keys in local or managed secrets, never in git. |
+| `GEMINI_EMBEDDING_MODEL` | Optional Gemini model override. Defaults to `gemini-embedding-2`. |
+| `EMBEDDING_API_KEY` | Required only when the effective provider is `openai`. |
+| `EMBEDDING_MODEL` | Optional OpenAI-compatible model override. |
 | `EMBEDDING_DIMENSIONS` | Must match the pgvector column dimension, currently `1536` for `DocumentChunk.embedding vector(1536)`. |
-| `EMBEDDING_BASE_URL` | Optional OpenAI-compatible base URL override, if using a compatible endpoint. |
+| `EMBEDDING_BASE_URL` | Optional OpenAI-compatible base URL override, if using the OpenAI provider. |
 
 Changing `EMBEDDING_MODEL`, `EMBEDDING_PROVIDER`, `EMBEDDING_BASE_URL`, or `EMBEDDING_DIMENSIONS` requires clearing/rebuilding existing embeddings or re-ingesting and re-embedding docs so retrieval stays consistent.
 
@@ -187,7 +191,7 @@ Re-embedding workflow:
 
 Troubleshooting:
 
-- Missing API key: `EMBEDDING_API_KEY` is required when the effective provider is `openai`.
+- Missing API key: `GEMINI_API_KEY` is required when the effective provider is `gemini`; `EMBEDDING_API_KEY` is required only for `openai`.
 - Dimension mismatch: keep `EMBEDDING_DIMENSIONS` aligned with `DocumentChunk.embedding vector(1536)`, or migrate the pgvector column before changing dimensions.
 - No retrieved chunks: ingest docs, run embed-missing, and confirm existing chunks were embedded with the same provider now used for queries.
 - Provider accidentally set in CI: run with `NODE_ENV=test` or set `EMBEDDING_PROVIDER=deterministic`; CI should not need external keys.
@@ -215,7 +219,7 @@ When `AUTH_ENABLED=false`, the dashboard works as before and does not need any t
 
 ## API Endpoint Summary
 
-- `GET /health` - API/database health plus effective `llmProvider`, `embeddingProvider`, and `ragMode`.
+- `GET /health` - API/database health plus effective `llmProvider`, `embeddingProvider`, `embeddingModel`, `embeddingDimensions`, and `ragMode`.
 - `POST /ingestion/sample-docs` - ingest bundled sample markdown docs.
 - `POST /retrieval/embed-missing` - create embeddings for chunks that do not have them.
 - `POST /retrieval/search` - search embedded support docs.

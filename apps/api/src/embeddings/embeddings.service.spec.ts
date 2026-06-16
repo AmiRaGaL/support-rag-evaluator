@@ -23,7 +23,26 @@ describe('EmbeddingsService', () => {
     await expect(service.embed('Billing email updates')).resolves.toEqual(
       unitVector(),
     );
-    expect(embed).toHaveBeenCalledWith('Billing email updates');
+    expect(embed).toHaveBeenCalledWith('Billing email updates', {});
+  });
+
+  it('passes embedding purpose and title to the provider', async () => {
+    const embed = jest.fn().mockResolvedValue(unitVector());
+    const provider: EmbeddingProvider = {
+      providerName: 'mock',
+      embed,
+    };
+    const service = new EmbeddingsService(provider);
+
+    await service.embed('Billing email updates', {
+      purpose: 'document',
+      title: 'Billing',
+    });
+
+    expect(embed).toHaveBeenCalledWith('Billing email updates', {
+      purpose: 'document',
+      title: 'Billing',
+    });
   });
 
   it('fails clearly before callers write mismatched dimensions', async () => {

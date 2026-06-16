@@ -49,16 +49,17 @@ Deployment readiness documentation is included, but no production deployment is 
 
 ## Provider Setup And Auth
 
-App/demo mode is intended to run real GenAI RAG with `LLM_PROVIDER=groq`, `GROQ_API_KEY`, `EMBEDDING_PROVIDER=openai`, and `EMBEDDING_API_KEY`. The health endpoint and dashboard expose the effective LLM provider, embedding provider, and RAG mode so deterministic fallback is visible.
+Hosted app/demo mode is intended to run real GenAI RAG with `LLM_PROVIDER=groq`, `GROQ_API_KEY`, `EMBEDDING_PROVIDER=gemini`, `GEMINI_API_KEY`, `GEMINI_EMBEDDING_MODEL=gemini-embedding-2`, and `EMBEDDING_DIMENSIONS=1536`. The health endpoint and dashboard expose the effective LLM provider, embedding provider, embedding model, embedding dimensions, and RAG mode so deterministic fallback is visible.
 
 Deterministic providers remain available for tests, CI, and offline fallback. Optional modes include:
 
 - Groq chat completions for real LLM generation.
-- OpenAI-compatible embeddings for real embedding retrieval.
+- Gemini embeddings for hosted real embedding retrieval without requiring OpenAI.
+- OpenAI-compatible embeddings as an explicit optional provider.
 - Groq LLM-as-judge eval scoring.
 - A simple shared-token auth guard for protected API/dashboard demo workflows.
 
-Real provider keys and auth tokens must be user-managed secrets and should never be committed. After changing `EMBEDDING_PROVIDER`, `EMBEDDING_MODEL`, `EMBEDDING_BASE_URL`, or `EMBEDDING_DIMENSIONS`, existing document chunks must be re-embedded because stored chunk vectors and query vectors must come from the same provider/model/dimension setup.
+Real provider keys and auth tokens must be user-managed secrets and should never be committed. Gemini free tier access exists, but provider limits and pricing can change. After changing `EMBEDDING_PROVIDER`, `GEMINI_EMBEDDING_MODEL`, `EMBEDDING_MODEL`, `EMBEDDING_BASE_URL`, or `EMBEDDING_DIMENSIONS`, existing document chunks must be re-embedded because stored chunk vectors and query vectors must come from the same provider/model/dimension setup.
 
 ## What This Demonstrates
 

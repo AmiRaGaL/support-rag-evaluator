@@ -10,7 +10,7 @@ Support RAG Evaluator is currently a portfolio-grade full-stack RAG evaluator. T
 - **Retrieval:** Embedded chunks can be searched with pgvector similarity queries.
 - **Grounded chat with citations:** Chat responses are generated from retrieved support chunks and include citation metadata when answered.
 - **Deterministic and Groq LLM providers:** Groq is the app/demo default outside tests; deterministic remains available for CI-safe fallback.
-- **Deterministic and real embedding providers:** OpenAI-compatible embeddings are the app/demo default outside tests; deterministic embeddings remain available for CI-safe fallback.
+- **Deterministic and real embedding providers:** Gemini embeddings are the hosted app/demo default outside tests; OpenAI-compatible embeddings remain explicit optional configuration; deterministic embeddings remain available for CI-safe fallback.
 - **Baseline evals:** A baseline eval dataset exercises supported and unsupported support questions.
 - **Query logging:** Chat requests persist answer, refusal, provider, latency, retrieved chunk, and citation-use metadata.
 - **Persisted eval runs:** Eval runs and per-case results are stored for later inspection.
@@ -34,8 +34,9 @@ Support RAG Evaluator is currently a portfolio-grade full-stack RAG evaluator. T
 ## Known Limitations
 
 - The included content is a small sample dataset, not a production support corpus.
-- OpenAI-compatible embeddings are intended for the default demo path.
+- Gemini embeddings are intended for the hosted default demo path.
 - Deterministic embeddings remain available for offline fallback and repeatable tests.
+- Gemini free tier access exists, but provider limits and pricing can change; it is not unlimited free production usage.
 - Changing embedding provider, model, base URL, or dimensions requires re-ingesting/re-embedding docs so query and stored chunk vectors stay compatible.
 - Optional auth is simple shared-token protection, not full user management or OAuth.
 - LLM-as-judge evals are optional and config-gated; default deterministic eval behavior remains CI-safe.

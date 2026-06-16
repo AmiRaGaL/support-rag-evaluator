@@ -43,7 +43,7 @@ docker compose --profile tools run --rm api-migrate
 
 - Docker Compose starts Postgres with pgvector, the API, and the web dashboard.
 - Migrations are explicit so the database lifecycle is visible.
-- The API demo runs real GenAI RAG with `LLM_PROVIDER=groq` and `EMBEDDING_PROVIDER=openai`, so it needs `GROQ_API_KEY` and `EMBEDDING_API_KEY` in the local environment.
+- The API demo runs hosted GenAI RAG with `LLM_PROVIDER=groq` and `EMBEDDING_PROVIDER=gemini`, so it needs `GROQ_API_KEY` and `GEMINI_API_KEY` in the local environment.
 
 ## 4. Open The Dashboard
 
@@ -70,7 +70,7 @@ http://localhost:3001/health
 **Talking points:**
 
 - This confirms the dashboard can reach the API.
-- The default demo should report `ragMode: genai`.
+- The default demo should report `embeddingProvider: gemini`, `embeddingModel: gemini-embedding-2`, `embeddingDimensions: 1536`, and `ragMode: genai`.
 - The API is running on port `3001`; the dashboard is running on port `3000`.
 - If health fails, the rest of the demo should pause for troubleshooting.
 
@@ -92,7 +92,7 @@ http://localhost:3001/health
 
 - The retrieval module finds chunks with missing vectors and stores embeddings from the configured provider.
 - pgvector powers similarity search over those chunk embeddings.
-- The default demo should use OpenAI-compatible embeddings; deterministic embeddings are fallback for offline runs and CI.
+- The default demo should use Gemini embeddings; deterministic embeddings are fallback for offline runs and CI.
 
 ## 8. Ask A Grounded Support Question
 
@@ -207,4 +207,4 @@ Then verify:
 - **No eval runs yet:** Click **Run baseline eval** from the dashboard, or call `POST /evals/run-baseline`.
 - **Generated client out of date:** Start the API and run `cd apps/web && npm run generate:api-client` to validate the checked-in client against OpenAPI.
 - **Missing embeddings:** Click **Embed missing chunks** after ingesting sample docs. Retrieval needs embedded chunks to return grounded context.
-- **Provider env not configured:** Set `GROQ_API_KEY` and `EMBEDDING_API_KEY` outside git for the default demo, or explicitly set `LLM_PROVIDER=deterministic` and `EMBEDDING_PROVIDER=deterministic` for offline fallback.
+- **Provider env not configured:** Set `GROQ_API_KEY` and `GEMINI_API_KEY` outside git for the default demo, or explicitly set `LLM_PROVIDER=deterministic` and `EMBEDDING_PROVIDER=deterministic` for offline fallback.

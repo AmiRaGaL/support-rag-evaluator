@@ -17,8 +17,10 @@ export interface HealthResponse {
   status: string;
   service: string;
   database: string;
-  llmProvider: "deterministic" | "groq";
-  embeddingProvider: "deterministic" | "openai";
+  llmProvider: "deterministic" | "groq" | "gemini" | string;
+  embeddingProvider: "deterministic" | "gemini" | "openai" | string;
+  embeddingModel?: string;
+  embeddingDimensions: number;
   ragMode: "genai" | "hybrid" | "deterministic";
   timestamp: string;
 }

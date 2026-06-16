@@ -10,6 +10,7 @@ import {
 } from "@/components/ui";
 import { SetupActions } from "@/components/dashboard/setup-actions";
 import { apiBaseUrl, getHealth, type HealthResponse } from "@/lib/api-client";
+import { getProviderStatus } from "@/lib/provider-status";
 
 export const dynamic = "force-dynamic";
 
@@ -40,31 +41,6 @@ const dashboardSections = [
 type HealthState =
   | { connected: true; data: HealthResponse }
   | { connected: false; message: string };
-
-function getProviderStatus(health: HealthResponse) {
-  if (health.ragMode === "genai") {
-    return {
-      badgeTone: "success" as const,
-      title: "GenAI RAG active",
-      description: "Using real LLM generation and real embedding retrieval.",
-    };
-  }
-
-  if (health.ragMode === "hybrid") {
-    return {
-      badgeTone: "warning" as const,
-      title: "Hybrid RAG mode",
-      description:
-        "One provider is deterministic fallback. This is not the full GenAI RAG path.",
-    };
-  }
-
-  return {
-    badgeTone: "danger" as const,
-    title: "Deterministic fallback",
-    description: "Not real GenAI generation or real embedding retrieval.",
-  };
-}
 
 export default async function Home() {
   return (
@@ -145,7 +121,16 @@ async function HealthPanel() {
         </p>
         <p>
           LLM: <strong>{health.data.llmProvider}</strong>. Embeddings:{" "}
-          <strong>{health.data.embeddingProvider}</strong>.
+          <strong>{health.data.embeddingProvider}</strong>
+          {health.data.embeddingModel ? (
+            <>
+              {" "}
+              <strong>{health.data.embeddingModel}</strong>
+            </>
+          ) : null}
+          {health.data.embeddingDimensions
+            ? ` (${health.data.embeddingDimensions}d).`
+            : "."}
         </p>
       </div>
       <Badge tone={providerStatus.badgeTone}>

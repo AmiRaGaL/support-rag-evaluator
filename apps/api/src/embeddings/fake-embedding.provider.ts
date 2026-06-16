@@ -8,6 +8,8 @@ import {
 @Injectable()
 export class FakeEmbeddingProvider implements EmbeddingProvider {
   readonly providerName = 'deterministic';
+  readonly modelName = 'deterministic';
+  readonly dimensions = EMBEDDING_DIMENSIONS;
 
   embed(text: string): Promise<number[]> {
     const vector = new Array<number>(EMBEDDING_DIMENSIONS).fill(0);

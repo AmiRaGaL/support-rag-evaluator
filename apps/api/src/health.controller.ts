@@ -59,6 +59,8 @@ export class HealthController {
     await this.prisma.$queryRaw`SELECT 1`;
     const llmProvider = this.llmService.getProviderName();
     const embeddingProvider = this.embeddingsService.getProviderName();
+    const embeddingModel = this.embeddingsService.getModelName();
+    const embeddingDimensions = this.embeddingsService.getDimensions();
 
     return {
       status: 'ok',
@@ -66,6 +68,8 @@ export class HealthController {
       database: 'ok',
       llmProvider,
       embeddingProvider,
+      embeddingModel,
+      embeddingDimensions,
       ragMode: resolveRagMode(llmProvider, embeddingProvider),
       timestamp: new Date().toISOString(),
     };
