@@ -7,9 +7,10 @@ import {
 } from './embedding-provider.interface';
 import { EmbeddingsService } from './embeddings.service';
 import { FakeEmbeddingProvider } from './fake-embedding.provider';
+import { GeminiEmbeddingProvider } from './gemini-embedding.provider';
 import { OpenAiEmbeddingProvider } from './openai-embedding.provider';
 
-export type EmbeddingProviderName = 'deterministic' | 'openai';
+export type EmbeddingProviderName = 'deterministic' | 'gemini' | 'openai';
 
 export function resolveEmbeddingProviderName(
   configService: ConfigService,
@@ -22,18 +23,19 @@ export function resolveEmbeddingProviderName(
   if (!configuredProvider) {
     return configService.get<string>('NODE_ENV') === 'test'
       ? 'deterministic'
-      : 'openai';
+      : 'gemini';
   }
 
   if (
     configuredProvider === 'deterministic' ||
+    configuredProvider === 'gemini' ||
     configuredProvider === 'openai'
   ) {
     return configuredProvider;
   }
 
   throw new Error(
-    `Unsupported EMBEDDING_PROVIDER=${configuredProvider}. Supported values: deterministic, openai.`,
+    `Unsupported EMBEDDING_PROVIDER=${configuredProvider}. Supported values: deterministic, gemini, openai.`,
   );
 }
 
@@ -51,6 +53,14 @@ export function createEmbeddingProvider(
       model: configService.get<string>('EMBEDDING_MODEL'),
       dimensions,
       baseURL: configService.get<string>('EMBEDDING_BASE_URL'),
+    });
+  }
+
+  if (provider === 'gemini') {
+    return new GeminiEmbeddingProvider({
+      apiKey: configService.get<string>('GEMINI_API_KEY') ?? '',
+      model: configService.get<string>('GEMINI_EMBEDDING_MODEL'),
+      dimensions,
     });
   }
 

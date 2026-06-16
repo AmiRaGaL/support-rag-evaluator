@@ -33,11 +33,11 @@ npm run prisma:migrate:deploy
 ## Runtime Defaults
 
 - `LLM_PROVIDER=groq` outside `NODE_ENV=test`; `deterministic` in tests
-- `EMBEDDING_PROVIDER=openai` outside `NODE_ENV=test`; `deterministic` in tests
+- `EMBEDDING_PROVIDER=gemini` outside `NODE_ENV=test`; `deterministic` in tests
 - `EVAL_JUDGE_PROVIDER=deterministic`
 - `AUTH_ENABLED=false`
 
-App/demo defaults use real GenAI RAG and require `GROQ_API_KEY` plus `EMBEDDING_API_KEY`. Deterministic providers remain available for CI, tests, and offline fallback. Keys and auth tokens are local/runtime configuration and should never be committed.
+App/demo defaults use real hosted GenAI RAG and require `GROQ_API_KEY` plus `GEMINI_API_KEY`. Deterministic providers remain available for CI, tests, and offline fallback. Keys and auth tokens are local/runtime configuration and should never be committed.
 
 ## Useful Endpoints
 

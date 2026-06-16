@@ -9,10 +9,10 @@ Support RAG Evaluator is a full-stack, eval-driven support assistant. It is desi
 - **NestJS API (`apps/api`)**: Backend application that owns ingestion, retrieval, chat orchestration, logging, eval execution, OpenAPI docs, and database access.
 - **Optional API auth guard**: Global NestJS guard that can require a shared bearer/API token for protected API routes when `AUTH_ENABLED=true`.
 - **Ingestion module**: Reads bundled markdown support docs, extracts titles/source keys, chunks content, and upserts documents/chunks.
-- **Embeddings module**: Provides deterministic embeddings for local development, tests, and CI-safe retrieval behavior.
+- **Embeddings module**: Provides OpenAI-compatible embeddings for the default app/demo path and deterministic embeddings for tests, CI, and offline fallback.
 - **Retrieval module**: Embeds queries, searches stored chunk vectors with pgvector, and returns ranked support-document chunks.
 - **Chat/RAG module**: Coordinates retrieval, grounded answer generation, streaming and non-streaming responses, citation metadata, refusal behavior, and query logging.
-- **LLM provider abstraction**: Selects a deterministic provider by default or an optional Groq provider when configured.
+- **LLM provider abstraction**: Selects Groq by default outside tests and deterministic fallback in `NODE_ENV=test` or when explicitly configured.
 - **Query logging**: Persists questions, answers, refusal state, provider, confidence, latency, retrieved chunks, and citation-use metadata.
 - **Eval runner**: Runs the baseline eval dataset through the same ingestion, embedding, retrieval, and chat path used by the API.
 - **Eval judge provider**: Optional judge layer for eval cases. The deterministic judge is default; Groq judge mode is explicit and config-gated.

@@ -1,6 +1,6 @@
 # Release Checklist
 
-Use this checklist before tagging or presenting a release candidate. The default release path should remain deterministic and external-key-free.
+Use this checklist before tagging or presenting a release candidate. The app/demo path should be real GenAI RAG, while CI and tests should remain deterministic and external-key-free.
 
 ## Static Checks
 
@@ -9,14 +9,14 @@ Use this checklist before tagging or presenting a release candidate. The default
 - [ ] Run API build from `apps/api`: `npm run build`.
 - [ ] Run web lint from `apps/web`: `npm run lint`.
 - [ ] Run web build from `apps/web`: `npm run build`.
-- [ ] Confirm CI defaults do not require `GROQ_API_KEY`, `EMBEDDING_API_KEY`, or judge-provider keys.
+- [ ] Confirm CI/test defaults do not require `GROQ_API_KEY`, `GEMINI_API_KEY`, `EMBEDDING_API_KEY`, or judge-provider keys.
 
 ## Full-Stack Smoke Test
 
 - [ ] Start the full stack from the repository root: `docker compose up --build -d`.
 - [ ] Run migrations explicitly: `docker compose --profile tools run --rm api-migrate`.
 - [ ] Open the dashboard at `http://localhost:3000`.
-- [ ] Verify API health at `http://localhost:3001/health`.
+- [ ] Verify API health at `http://localhost:3001/health`, including `llmProvider`, `embeddingProvider`, `embeddingModel`, `embeddingDimensions`, and `ragMode`.
 - [ ] Ingest sample docs from the dashboard or `POST /ingestion/sample-docs`.
 - [ ] Embed missing chunks from the dashboard or `POST /retrieval/embed-missing`.
 - [ ] Test regular chat with `Can I export billing history?`.

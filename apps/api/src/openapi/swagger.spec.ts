@@ -1,14 +1,15 @@
 import { INestApplication } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Test } from '@nestjs/testing';
 import { App } from 'supertest/types';
 import { ChatController } from '../chat/chat.controller';
 import { ChatService } from '../chat/chat.service';
+import { EmbeddingsService } from '../embeddings/embeddings.service';
 import { EvalsController } from '../evals/evals.controller';
 import { EvalsService } from '../evals/evals.service';
 import { HealthController } from '../health.controller';
 import { IngestionController } from '../ingestion/ingestion.controller';
 import { IngestionService } from '../ingestion/ingestion.service';
+import { LlmService } from '../llm/llm.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { QueryLogsController } from '../query-logs/query-logs.controller';
 import { QueryLogsService } from '../query-logs/query-logs.service';
@@ -37,11 +38,15 @@ describe('OpenAPI documentation', () => {
           },
         },
         {
-          provide: ConfigService,
+          provide: LlmService,
           useValue: {
-            get: jest.fn((key: string) =>
-              key === 'NODE_ENV' ? 'test' : undefined,
-            ),
+            getProviderName: jest.fn().mockReturnValue('deterministic'),
+          },
+        },
+        {
+          provide: EmbeddingsService,
+          useValue: {
+            getProviderName: jest.fn().mockReturnValue('deterministic'),
           },
         },
         {

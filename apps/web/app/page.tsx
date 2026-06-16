@@ -10,6 +10,7 @@ import {
 } from "@/components/ui";
 import { SetupActions } from "@/components/dashboard/setup-actions";
 import { apiBaseUrl, getHealth, type HealthResponse } from "@/lib/api-client";
+import { getProviderStatus } from "@/lib/provider-status";
 
 export const dynamic = "force-dynamic";
 
@@ -107,19 +108,32 @@ async function HealthPanel() {
     );
   }
 
+  const providerStatus = getProviderStatus(health.data);
+
   return (
     <Card className="health-panel" aria-label="API health">
       <div>
         <p className="eyebrow">API health</p>
-        <h2>Connected</h2>
+        <h2>{providerStatus.title}</h2>
         <p>
           Service {health.data.service} reports {health.data.status}. Database
-          status is {health.data.database}. RAG mode is{" "}
-          {health.data.ragMode} with {health.data.llmProvider} answers and{" "}
-          {health.data.embeddingProvider} embeddings.
+          status is {health.data.database}. {providerStatus.description}
+        </p>
+        <p>
+          LLM: <strong>{health.data.llmProvider}</strong>. Embeddings:{" "}
+          <strong>{health.data.embeddingProvider}</strong>
+          {health.data.embeddingModel ? (
+            <>
+              {" "}
+              <strong>{health.data.embeddingModel}</strong>
+            </>
+          ) : null}
+          {health.data.embeddingDimensions
+            ? ` (${health.data.embeddingDimensions}d).`
+            : "."}
         </p>
       </div>
-      <Badge tone={health.data.ragMode === "genai" ? "success" : "warning"}>
+      <Badge tone={providerStatus.badgeTone}>
         {health.data.ragMode}
       </Badge>
     </Card>

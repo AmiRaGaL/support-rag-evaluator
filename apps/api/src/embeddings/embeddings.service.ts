@@ -6,6 +6,7 @@ import {
 import {
   EMBEDDING_DIMENSIONS,
   EMBEDDING_PROVIDER,
+  type EmbeddingInputOptions,
   type EmbeddingProvider,
 } from './embedding-provider.interface';
 
@@ -23,8 +24,19 @@ export class EmbeddingsService {
     );
   }
 
-  async embed(text: string): Promise<number[]> {
-    const embedding = await this.embeddingProvider.embed(text);
+  getModelName(): string | undefined {
+    return this.embeddingProvider.modelName;
+  }
+
+  getDimensions(): number {
+    return this.embeddingProvider.dimensions ?? EMBEDDING_DIMENSIONS;
+  }
+
+  async embed(
+    text: string,
+    options: EmbeddingInputOptions = {},
+  ): Promise<number[]> {
+    const embedding = await this.embeddingProvider.embed(text, options);
     this.validateEmbedding(embedding);
 
     return embedding;

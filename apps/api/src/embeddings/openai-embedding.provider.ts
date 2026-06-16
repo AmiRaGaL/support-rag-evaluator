@@ -14,10 +14,10 @@ export interface OpenAiEmbeddingProviderOptions {
 @Injectable()
 export class OpenAiEmbeddingProvider implements EmbeddingProvider {
   readonly providerName = 'openai';
+  readonly modelName: string;
+  readonly dimensions?: number;
 
   private readonly client: OpenAI;
-  private readonly model: string;
-  private readonly dimensions?: number;
 
   constructor(options: OpenAiEmbeddingProviderOptions) {
     const apiKey = options.apiKey.trim();
@@ -32,13 +32,13 @@ export class OpenAiEmbeddingProvider implements EmbeddingProvider {
       apiKey,
       baseURL: options.baseURL?.trim() || undefined,
     });
-    this.model = options.model?.trim() || DEFAULT_EMBEDDING_MODEL;
+    this.modelName = options.model?.trim() || DEFAULT_EMBEDDING_MODEL;
     this.dimensions = options.dimensions;
   }
 
   async embed(text: string): Promise<number[]> {
     const response = await this.client.embeddings.create({
-      model: this.model,
+      model: this.modelName,
       input: text,
       dimensions: this.dimensions,
     });
